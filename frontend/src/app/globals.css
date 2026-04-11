@@ -1,0 +1,274 @@
+/* ---------------- Tailwind Core ---------------- */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------------- Fonts ---------------- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* ---------------- Theme Variables ---------------- */
+:root {
+  --background: oklch(0.985 0.002 264);
+  --foreground: oklch(0.15 0.01 264);
+
+  --primary: oklch(0.72 0.19 171);
+  --secondary: oklch(0.68 0.2 200);
+  --accent: oklch(0.75 0.18 190);
+
+  --border: oklch(0.9 0.01 264);
+  --card: oklch(1 0 0);
+  --muted: oklch(0.95 0.01 264);
+
+  --radius: 0.75rem;
+}
+
+/* 🌙 Dark Mode */
+.dark {
+  --background: oklch(0.07 0.01 264);
+  --foreground: oklch(0.97 0.005 264);
+
+  --primary: oklch(0.72 0.19 171);
+  --secondary: oklch(0.65 0.22 200);
+  --accent: oklch(0.7 0.2 190);
+
+  --border: oklch(0.2 0.02 264);
+  --card: oklch(0.11 0.015 264);
+  --muted: oklch(0.16 0.02 264);
+}
+
+/* ---------------- Base ---------------- */
+@layer base {
+  * {
+    @apply box-border;
+    border-color: var(--border);
+  }
+
+  body {
+    @apply font-sans;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: 'Inter', sans-serif;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* ---------------- Components ---------------- */
+@layer components {
+
+  /* Navbar Link */
+  .nav-link {
+    @apply relative text-white/70 hover:text-white transition;
+  }
+
+  .nav-link::after {
+    content: "";
+    @apply absolute left-0 -bottom-1 w-full h-[2px]
+    bg-gradient-to-r from-green-400 to-blue-500
+    scale-x-0 origin-left transition-transform duration-300;
+  }
+
+  .nav-link:hover::after {
+    @apply scale-x-100;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply px-5 py-2.5 rounded-xl font-medium text-white relative overflow-hidden transition;
+    background: linear-gradient(135deg, #22c55e, #3b82f6);
+  }
+
+  .btn-primary::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, transparent, rgba(255,255,255,0.25), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .btn-primary:hover::after {
+    opacity: 1;
+  }
+
+  .btn-secondary {
+    @apply px-5 py-2.5 rounded-xl transition;
+    background: var(--muted);
+    color: var(--foreground);
+  }
+
+  /* Card */
+  .card {
+    @apply rounded-2xl p-6 backdrop-blur-md transition;
+
+    background: color-mix(in oklch, var(--card) 85%, transparent);
+    border: 1px solid var(--border);
+
+    box-shadow:
+      0 10px 30px rgba(0,0,0,0.15),
+      inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+
+  /* Input */
+  .input {
+    @apply w-full px-4 py-3 rounded-xl outline-none transition;
+
+    background: var(--muted);
+    border: 1px solid var(--border);
+    color: var(--foreground);
+  }
+
+  /* Badge */
+  .badge {
+    @apply px-2.5 py-1 rounded-full text-xs font-medium;
+    background: rgba(34,197,94,0.1);
+    color: #22c55e;
+  }
+}
+
+/* ---------------- GRID SYSTEM ---------------- */
+
+.grid-pattern {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Base Grid */
+.grid-pattern::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, oklch(0.7 0.2 171 / 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(0.65 0.22 200 / 0.06) 1px, transparent 1px);
+  background-size: 60px 60px;
+  animation: grid-move 20s linear infinite;
+}
+
+/* Glow Layer */
+.grid-pattern::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 20%,
+    oklch(0.72 0.19 171 / 0.15),
+    transparent 60%
+  );
+}
+
+/* ---------------- GLOW ---------------- */
+
+.bg-glow {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(
+    circle,
+    oklch(0.72 0.19 171 / 0.2),
+    transparent 70%
+  );
+  filter: blur(120px);
+  z-index: 0;
+}
+
+/* ---------------- TEXT ---------------- */
+
+.text-gradient {
+  background: linear-gradient(135deg, #22c55e, #3b82f6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ---------------- ANIMATIONS ---------------- */
+
+@keyframes grid-move {
+  0% {
+    transform: translateY(0px);
+  }
+  100% {
+    transform: translateY(60px);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+.logo-glow {
+  animation: pulse-glow 2.5s ease-in-out infinite;
+}
+
+/* ---------------- GLASS NAVBAR ---------------- */
+
+.glass-nav {
+  position: relative;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+
+  background: color-mix(in oklch, var(--card) 70%, transparent);
+  border: 1px solid color-mix(in oklch, var(--border) 60%, transparent);
+
+  box-shadow:
+    0 8px 30px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+/* Glow Border Effect */
+.glass-nav::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+
+  background: linear-gradient(
+    120deg,
+    transparent,
+    oklch(0.72 0.19 171 / 0.5),
+    transparent,
+    oklch(0.65 0.22 200 / 0.5),
+    transparent
+  );
+
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* Hover Glow Boost */
+.glass-nav:hover::before {
+  opacity: 0.8;
+  transition: opacity 0.3s ease;
+}
+
+/* ---------------- SCROLLBAR ---------------- */
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #020617;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #374151;
+  border-radius: 999px;
+}

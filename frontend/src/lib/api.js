@@ -1,0 +1,46 @@
+import axios from 'axios';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
+const api = axios.create({ baseURL: `${API_URL}/api`, withCredentials:true });
+
+// api.interceptors.request.use((config) => {
+//   const token = localStorage.getItem('token');
+//   if (token) config.headers.Authorization = `Bearer ${token}`;
+//   return config;
+// });
+api.interceptors.request.use((config) => {
+  return config; // no token needed
+});
+
+api.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    if (err.response?.status === 401) {
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(err);
+  }
+);
+
+// ── Resume ─────────────────────────────────────────────────────────────────
+export const uploadResume = (formData) => api.post('/resume/upload', formData, {
+  headers: { 'Content-Type': 'multipart/form-data' },
+});
+export const getMyResumes = () => api.get('/resume/my');
+export const getResume = (id) => api.get(`/resume/${id}`);
+
+// ── Interview ──────────────────────────────────────────────────────────────
+export const startInterview = (data) => api.post('/interview/start', data);
+export const submitAnswer = (sessionId, data) => api.post(`/interview/${sessionId}/answer`, data);
+export const completeInterview = (sessionId) => api.post(`/interview/${sessionId}/complete`);
+export const getSessions = () => api.get('/interview/sessions');
+export const getSession = (id) => api.get(`/interview/${id}`);
+
+// ── Evaluation ─────────────────────────────────────────────────────────────
+export const analyzeEmotion = (data) => api.post('/evaluation/emotion', data);
+export const analyzeVoice = (data) => api.post('/evaluation/voice', data);
+export const getSessionReport = (id) => api.get(`/evaluation/session/${id}/report`);
+
+export default api;
