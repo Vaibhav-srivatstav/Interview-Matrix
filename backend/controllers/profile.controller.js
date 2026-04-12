@@ -4,9 +4,9 @@ import User from "../models/User.js";
 
 export const getProfile = async (req, res) => {
   try {
-    const userId = req.userId || req.user?._id;;
+    const userId = req.user._id; // ✅ always use this
 
-    const profile = await CandidateProfile.findOne({ userId });
+    const profile = await CandidateProfile.findOne({ userId: userId.toString() });
     const user = await User.findById(userId);
 
     if (!user) return res.status(404).json({ msg: "User not found" });
@@ -14,41 +14,40 @@ export const getProfile = async (req, res) => {
     let finalProfile = {};
 
     if (profile) {
-        finalProfile = profile.toObject(); 
-        
-        if (!finalProfile.avatar) {
-            finalProfile.avatar = user.avatar;
-        }
-        if (!finalProfile.name) finalProfile.name = user.name;
-        if (!finalProfile.email) finalProfile.email = user.email;
+      finalProfile = profile.toObject();
+
+      if (!finalProfile.avatar) finalProfile.avatar = user.avatar;
+      if (!finalProfile.name) finalProfile.name = user.name;
+      if (!finalProfile.email) finalProfile.email = user.email;
 
     } else {
-        finalProfile = {
-            userId: user._id,
-            name: user.name,
-            email: user.email,
-            avatar: user.avatar, // Google Avatar
-            skills: [],
-            experience: [],
-            projects: [],
-            education: []
-        };
+      finalProfile = {
+        userId: user._id.toString(),
+        name: user.name,
+        email: user.email,
+        avatar: user.avatar,
+        skills: [],
+        experience: [],
+        projects: [],
+        education: []
+      };
     }
 
     res.json(finalProfile);
 
   } catch (err) {
+    console.error(err);
     res.status(500).send("Server Error");
   }
 };
 
 export const updateProfile = async (req, res) => {
     try {
-        const userId = req.userId;
+        const userId = req.user._id;
         const updates = req.body;
         
         const profile = await CandidateProfile.findOneAndUpdate(
-            { userId },
+            { userId: userId.toString()},
             { $set: updates },
             { new: true, upsert: true } 
         );

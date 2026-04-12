@@ -134,6 +134,8 @@ export default function InterviewPage() {
 
   const currentQ = questions[currentIdx];
 
+
+
   /* ---------------- UI ---------------- */
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] transition-colors">
@@ -175,7 +177,7 @@ export default function InterviewPage() {
 
           {/* Answer */}
           <div className="card space-y-3">
-            <VoiceRecorder
+            <VoiceRecorder key={currentIdx}
               onTranscript={handleTranscript}
               onVoiceMetrics={handleVoiceMetrics}
             />

@@ -52,9 +52,9 @@ const AddSkillWidget = ({ onAdd }) => {
   }
 
   return (
-    <div 
-        className={`skill-wrapper-container ${isOpen ? 'active' : ''}`} 
-        onClick={(e) => e.stopPropagation()}
+    <div
+      className={`skill-wrapper-container ${isOpen ? 'active' : ''}`}
+      onClick={(e) => e.stopPropagation()}
     >
       <style jsx>{`
         .skill-wrapper-container {
@@ -221,12 +221,12 @@ const AddSkillWidget = ({ onAdd }) => {
 
       <div className="wrapper">
         <div className="btn" role="button" onClick={toggleOpen}></div>
-        
+
         <div className="tooltip" onClick={(e) => e.stopPropagation()}>
-          <input 
-            type="text" 
-            className="skill-input" 
-            placeholder="Add skill..." 
+          <input
+            type="text"
+            className="skill-input"
+            placeholder="Add skill..."
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSave(e)}
@@ -238,15 +238,15 @@ const AddSkillWidget = ({ onAdd }) => {
         </div>
 
         <svg viewBox="0 0 300 300">
-           <use href="#shape-01" className="shape" />
-           <use href="#shape-02" className="shape" />
-           <use href="#shape-03" className="shape" />
-           <use href="#shape-04" className="shape" />
-           <use href="#shape-05" className="shape" />
-           <use href="#shape-06" className="shape" />
-           <use href="#shape-07" className="shape" />
-           <use href="#shape-08" className="shape" />
-           <use href="#shape-09" className="shape" />
+          <use href="#shape-01" className="shape" />
+          <use href="#shape-02" className="shape" />
+          <use href="#shape-03" className="shape" />
+          <use href="#shape-04" className="shape" />
+          <use href="#shape-05" className="shape" />
+          <use href="#shape-06" className="shape" />
+          <use href="#shape-07" className="shape" />
+          <use href="#shape-08" className="shape" />
+          <use href="#shape-09" className="shape" />
         </svg>
       </div>
     </div>
@@ -262,7 +262,7 @@ export function ProfileView() {
       location: "",
       title: "",
       summary: "",
-      avatar: "", 
+      avatar: "",
     },
     skills: {
       technical: [],
@@ -274,7 +274,7 @@ export function ProfileView() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [editingSection, setEditingSection] = useState(null)
-  
+
   // --- 1. FETCH DATA FROM BACKEND ---
   useEffect(() => {
     fetchProfile()
@@ -284,26 +284,26 @@ export function ProfileView() {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/profile`, {
         method: 'GET',
-        credentials: 'include' 
+        credentials: 'include'
       })
-      
+
       if (res.ok) {
         const data = await res.json()
         setProfile({
-            personalInfo: {
-                name: data.name || "",
-                email: data.email || "",
-                phone: data.phone || "",
-                location: data.location || "",
-                title: data.experience?.[0]?.title || "", 
-                summary: data.summary || "",
-                avatar: data.avatar || "" 
-            },
-            skills: {
-                technical: data.skills || [],
-                soft: [] 
-            },
-            resumeUploaded: true 
+          personalInfo: {
+            name: data.name || "",
+            email: data.email || "",
+            phone: data.phone || "",
+            location: data.location || "",
+            title: data.experience?.[0]?.title || "",
+            summary: data.summary || "",
+            avatar: data.avatar || ""
+          },
+          skills: {
+            technical: data.skills || [],
+            soft: []
+          },
+          resumeUploaded: true
         })
       }
     } catch (error) {
@@ -317,30 +317,30 @@ export function ProfileView() {
   const saveProfile = async () => {
     setIsSaving(true)
     try {
-        const backendPayload = {
-            name: profile.personalInfo.name,
-            email: profile.personalInfo.email,
-            phone: profile.personalInfo.phone,
-            location: profile.personalInfo.location,
-            summary: profile.personalInfo.summary,
-            skills: [...profile.skills.technical, ...profile.skills.soft],
-            avatar: profile.personalInfo.avatar
-        }
+      const backendPayload = {
+        name: profile.personalInfo.name,
+        email: profile.personalInfo.email,
+        phone: profile.personalInfo.phone,
+        location: profile.personalInfo.location,
+        summary: profile.personalInfo.summary,
+        skills: [...profile.skills.technical, ...profile.skills.soft],
+        avatar: profile.personalInfo.avatar
+      }
 
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/profile`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify(backendPayload)
-        })
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/profile`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(backendPayload)
+      })
 
-        if (res.ok) {
-            setEditingSection(null)
-        }
+      if (res.ok) {
+        setEditingSection(null)
+      }
     } catch (error) {
-        console.error("Failed to save", error)
+      console.error("Failed to save", error)
     } finally {
-        setIsSaving(false)
+      setIsSaving(false)
     }
   }
 
@@ -364,62 +364,69 @@ export function ProfileView() {
   const handleResumeUpload = async (file) => {
     const formData = new FormData()
     formData.append('resume', file)
-    
+
     setIsLoading(true);
 
     try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/resume/upload`, {
-            method: 'POST',
-            credentials: 'include',
-            body: formData
-        })
-        
-        if (res.ok) {
-            const data = await res.json()
-            const newProfileData = data.profile;
-            
-            setProfile(prev => ({
-                ...prev,
-                personalInfo: {
-                    ...prev.personalInfo,
-                    name: newProfileData.name || prev.personalInfo.name,
-                    email: newProfileData.email || prev.personalInfo.email,
-                    phone: newProfileData.phone || prev.personalInfo.phone,
-                    location: newProfileData.location || prev.personalInfo.location,
-                    summary: newProfileData.summary || prev.personalInfo.summary,
-                    title: newProfileData.experience?.[0]?.title || prev.personalInfo.title,
-                    avatar: newProfileData.avatar || prev.personalInfo.avatar 
-                },
-                skills: {
-                    ...prev.skills,
-                    technical: newProfileData.skills || [],
-                    soft: prev.skills.soft 
-                },
-                resumeUploaded: true
-            }))
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/resume/upload`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      })
 
-            const storedUser = localStorage.getItem("user");
-            if (storedUser) {
-                const userObj = JSON.parse(storedUser);
-                userObj.skills = newProfileData.skills || [];
-                localStorage.setItem("user", JSON.stringify(userObj));
-            }
+      if (res.ok) {
+        const data = await res.json()
+        const newProfileData = data?.data?. profile || data.resume;
+        if (!newProfileData) {
+          console.error("Profile missing in response:", data);
+          return;
         }
+
+        setProfile((prev) => ({
+          ...prev,
+          personalInfo: {
+            ...prev.personalInfo,
+            name: newProfileData?.name || prev.personalInfo.name,
+            email: newProfileData?.email || prev.personalInfo.email,
+            phone: newProfileData?.phone || prev.personalInfo.phone,
+            location: newProfileData?.location || prev.personalInfo.location,
+            summary: newProfileData?.summary || prev.personalInfo.summary,
+            avatar: newProfileData?.avatar || prev.personalInfo.avatar,
+          },
+          skills: {
+            technical: newProfileData.skills ||
+              newProfileData.detectedSkills || 
+              prev.skills.technical,
+            soft: prev.skills.soft,
+          },
+          experience: newProfileData?.experience || [],
+          education: newProfileData?.education || [],
+          projects: newProfileData?.projects || [],
+          resumeUploaded: true,
+        }));
+
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+          const userObj = JSON.parse(storedUser);
+          userObj.skills = newProfileData.skills || [];
+          localStorage.setItem("user", JSON.stringify(userObj));
+        }
+      }
     } catch (error) {
-        console.error("Upload failed", error)
+      console.error("Upload failed", error)
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   }
 
   const handleAvatarUpload = (file) => {
     if (file.size > 2 * 1024 * 1024) {
-        alert("File is too big! Please upload an image under 2MB.");
-        return;
+      alert("File is too big! Please upload an image under 2MB.");
+      return;
     }
 
     const reader = new FileReader()
-    
+
     reader.onload = async () => {
       const base64Image = reader.result;
 
@@ -433,10 +440,10 @@ export function ProfileView() {
 
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/profile`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ avatar: base64Image }) 
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ avatar: base64Image })
         })
 
         if (!res.ok) console.error("Failed to save avatar to server")
@@ -444,7 +451,7 @@ export function ProfileView() {
         console.error("Network error saving avatar", error)
       }
     }
-    
+
     reader.readAsDataURL(file)
   }
 
@@ -454,12 +461,12 @@ export function ProfileView() {
   const inputFocus = "focus-visible:ring-slate-400 dark:focus-visible:ring-slate-500"
 
   if (isLoading) {
-      return <div className="flex justify-center py-20"><Loader2 className="size-8 animate-spin" /></div>
+    return <div className="flex justify-center py-20"><Loader2 className="size-8 animate-spin" /></div>
   }
 
   return (
     <div className="space-y-6">
-      
+
       {/* GLOBAL SVG SYMBOLS FOR ADD WIDGET */}
       <svg style={{ display: 'none' }} xmlns="http://www.w3.org/2000/svg">
         <symbol id="shape-01" viewBox="0 0 300 300"><polygon points="155.77 140.06 141.08 152.42 159.12 158.96 155.77 140.06" stroke="var(--shape-color-03)"></polygon></symbol>
@@ -477,7 +484,7 @@ export function ProfileView() {
       <Card className="border-border/50">
         <CardContent className="pt-6">
           <div className="flex flex-col sm:flex-row items-start gap-6">
-            
+
             {/* Avatar Section */}
             <div className="relative">
               <Avatar className="size-24 border-2 border-slate-300 dark:border-slate-600">
@@ -653,12 +660,12 @@ export function ProfileView() {
                     box-shadow: none;
                 }
             `}</style>
-            
+
             <a className="custom-resume-btn text-black bg-zinc-100 hover:bg-zinc-200 dark:text-white dark:bg-zinc-800 dark:hover:bg-zinc-700">
-                <svg viewBox="0 0 256 256" height="20" width="20" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M74.34 85.66a8 8 0 0 1 11.32-11.32L120 108.69V24a8 8 0 0 1 16 0v84.69l34.34-34.35a8 8 0 0 1 11.32 11.32l-48 48a8 8 0 0 1-11.32 0ZM240 136v64a16 16 0 0 1-16 16H32a16 16 0 0 1-16-16v-64a16 16 0 0 1 16-16h52.4a4 4 0 0 1 2.83 1.17L111 145a24 24 0 0 0 34 0l23.8-23.8a4 4 0 0 1 2.8-1.2H224a16 16 0 0 1 16 16m-40 32a12 12 0 1 0-12 12a12 12 0 0 0 12-12" fill="currentColor"></path>
-                </svg>
-                {profile.resumeUploaded ? "Update Resume" : "Upload Resume"}
+              <svg viewBox="0 0 256 256" height="20" width="20" xmlns="http://www.w3.org/2000/svg">
+                <path d="M74.34 85.66a8 8 0 0 1 11.32-11.32L120 108.69V24a8 8 0 0 1 16 0v84.69l34.34-34.35a8 8 0 0 1 11.32 11.32l-48 48a8 8 0 0 1-11.32 0ZM240 136v64a16 16 0 0 1-16 16H32a16 16 0 0 1-16-16v-64a16 16 0 0 1 16-16h52.4a4 4 0 0 1 2.83 1.17L111 145a24 24 0 0 0 34 0l23.8-23.8a4 4 0 0 1 2.8-1.2H224a16 16 0 0 1 16 16m-40 32a12 12 0 1 0-12 12a12 12 0 0 0 12-12" fill="currentColor"></path>
+              </svg>
+              {profile.resumeUploaded ? "Update Resume" : "Upload Resume"}
             </a>
           </label>
         </CardContent>
@@ -669,11 +676,11 @@ export function ProfileView() {
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
-                <CardTitle>Skills</CardTitle>
-                <CardDescription>Manage your technical expertise</CardDescription>
+              <CardTitle>Skills</CardTitle>
+              <CardDescription>Manage your technical expertise</CardDescription>
             </div>
             <Button size="sm" onClick={saveProfile} disabled={isSaving} variant="outline" className={btnOutline}>
-                <Save className="size-4 mr-2"/> Save Skills
+              <Save className="size-4 mr-2" /> Save Skills
             </Button>
           </div>
         </CardHeader>
@@ -687,7 +694,7 @@ export function ProfileView() {
                   <Code className="size-5" />
                   <span className="font-semibold">Tech Skills</span>
                 </div>
-                
+
                 {/* NEW ADD SKILL WIDGET (Fixed: No input checkbox / button nesting) */}
                 <AddSkillWidget onAdd={(val) => handleSkillAdd("technical", val)} />
 
@@ -716,7 +723,7 @@ export function ProfileView() {
                   <Code className="size-5" />
                   <span className="font-semibold">Soft Skills</span>
                 </div>
-                
+
                 <AddSkillWidget onAdd={(val) => handleSkillAdd("soft", val)} />
 
               </AccordionTrigger>
@@ -736,6 +743,87 @@ export function ProfileView() {
                 )}
               </AccordionContent>
             </AccordionItem>
+            {/* education */}
+            {/* <AccordionItem value="education">
+              <AccordionTrigger className="hover:no-underline flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <Code className="size-5" />
+                  <span className="font-semibold">Education </span>
+                </div>
+
+                <AddSkillWidget onAdd={(val) => handleSkillAdd("education", val)} />
+
+              </AccordionTrigger>
+
+              <AccordionContent className="pt-2 flex flex-wrap gap-2">
+                {profile.education.length ? (
+                  profile.education.map((education, idx) => (
+                    <div key={idx} className="flex items-center gap-2 px-3 py-1 border rounded-full text-sm">
+                      <span>{education}</span>
+                      <button onClick={() => removeSkill("education", idx)} className="text-muted-foreground hover:text-red-500">
+                        <X className="size-3" />
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">No education added</p>
+                )}
+              </AccordionContent>
+            </AccordionItem> */}
+            {/* education */}
+            {/* <AccordionItem value="education">
+              <AccordionTrigger className="hover:no-underline flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <Code className="size-5" />
+                  <span className="font-semibold">Education </span>
+                </div>
+
+                <AddSkillWidget onAdd={(val) => handleSkillAdd("education", val)} />
+
+              </AccordionTrigger>
+
+              <AccordionContent className="pt-2 flex flex-wrap gap-2">
+                {profile.education.length ? (
+                  profile.education.map((skill, idx) => (
+                    <div key={idx} className="flex items-center gap-2 px-3 py-1 border rounded-full text-sm">
+                      <span>{skill}</span>
+                      <button onClick={() => removeSkill("soft", idx)} className="text-muted-foreground hover:text-red-500">
+                        <X className="size-3" />
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">No experience added</p>
+                )}
+              </AccordionContent>
+            </AccordionItem> */}
+            {/* education */}
+            {/* <AccordionItem value="project">
+              <AccordionTrigger className="hover:no-underline flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <Code className="size-5" />
+                  <span className="font-semibold">Project </span>
+                </div>
+
+                <AddSkillWidget onAdd={(val) => handleSkillAdd("project", val)} />
+
+              </AccordionTrigger>
+
+              <AccordionContent className="pt-2 flex flex-wrap gap-2">
+                {profile.project.length ? (
+                  profile.project.map((project, idx) => (
+                    <div key={idx} className="flex items-center gap-2 px-3 py-1 border rounded-full text-sm">
+                      <span>{project}</span>
+                      <button onClick={() => removeSkill("project", idx)} className="text-muted-foreground hover:text-red-500">
+                        <X className="size-3" />
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">No project added</p>
+                )}
+              </AccordionContent>
+            </AccordionItem> */}
           </Accordion>
         </CardContent>
       </Card>
