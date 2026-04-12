@@ -10,31 +10,38 @@ export default function VoiceRecorder({ onTranscript, onVoiceMetrics }) {
   const shouldRef = useRef(false);
 
   useEffect(() => {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) return;
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return;
 
-    const sr = new SR();
-    sr.continuous = true;
-    sr.interimResults = true;
+  const sr = new SR();
+  sr.continuous = true;
+  sr.interimResults = true;
 
-    sr.onresult = (e) => {
-      let interim = '';
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) {
-          finalRef.current += e.results[i][0].transcript + ' ';
-        } else {
-          interim += e.results[i][0].transcript;
-        }
+  sr.onresult = (e) => {
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) {
+        finalRef.current += e.results[i][0].transcript + ' ';
+      } else {
+        interim += e.results[i][0].transcript;
       }
-      onTranscript(finalRef.current + interim);
-    };
+    }
+    onTranscript(finalRef.current + interim);
+  };
 
-    sr.onend = () => {
-      if (shouldRef.current) sr.start();
-    };
+  sr.onend = () => {
+    // FIX: Only restart if the parent hasn't stopped it
+    if (shouldRef.current && recording) sr.start();
+  };
 
-    srRef.current = sr;
-  }, []);
+  srRef.current = sr;
+
+  // CLEANUP: Important to stop the mic when the component unmounts
+  return () => {
+    shouldRef.current = false;
+    sr.stop();
+  };
+}, [onTranscript]);
 
   const start = () => {
     finalRef.current = '';

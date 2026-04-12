@@ -30,8 +30,8 @@ export default function HomePage() {
 
         {/* Logo */}
         <div className="flex justify-center mb-6">
-          <Image src={logo} alt="Logo" width={800} className="block dark:hidden" />
-          <Image src={logo2} alt="Logo" width={800} className="hidden dark:block" />
+          <Image src={logo} alt="Logo" width={800} hight='auto' className="block dark:hidden" />
+          <Image src={logo2} alt="Logo" width={800} hight='auto' className="hidden dark:block" />
         </div>
 
         {/* Badge */}

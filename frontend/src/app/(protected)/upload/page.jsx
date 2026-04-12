@@ -66,6 +66,7 @@ export default function UploadPage() {
     setStarting(true);
 
     try {
+      sessionStorage.clear();
       const res = await startInterview({
         resumeId: resumeData.id,
         difficulty,

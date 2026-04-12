@@ -7,13 +7,17 @@ const router = express.Router();
 // GET /api/questions?category=react&difficulty=medium
 router.get('/', auth, async (req, res) => {
   try {
-    const { category, difficulty, limit = 20 } = req.query;
+    const { limit = 5, category } = req.query;
     const filter = {};
-    if (category) filter.category = { $in: category.split(',') };
-    if (difficulty) filter.difficulty = difficulty;
+    if (category) filter.category = category;
 
-    const questions = await Question.find(filter).limit(Number(limit));
-    res.json({ questions, count: questions.length });
+    // IMPORTANT: Use aggregate, not find
+    const questions = await Question.aggregate([
+      { $match: filter }, 
+      { $sample: { size: parseInt(limit) } } 
+    ]);
+
+    res.json({ questions });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }

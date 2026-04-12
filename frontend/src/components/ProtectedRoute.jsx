@@ -3,18 +3,23 @@
 import { useAuth } from '@/lib/authContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import FullPageLoader from './FullPageLoader';
 
 export default function ProtectedRoute({ children }) {
-  const { user, loading } = useAuth();
+  const { user, loading, initialized } = useAuth();
+
+
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (initialized && !loading && !user) {
       router.replace('/login');
     }
-  }, [user, loading]);
+  }, [user, loading, initialized, router]);
 
-  if (loading) return null;
+  if (loading || !initialized) {
+    return <FullPageLoader/>;
+  }
   if (!user) return null;
 
   return children;

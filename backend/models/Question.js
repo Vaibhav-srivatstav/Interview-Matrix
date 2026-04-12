@@ -1,4 +1,4 @@
-import mongoose  from 'mongoose';
+import mongoose from 'mongoose';
 
 const questionSchema = new mongoose.Schema(
   {
@@ -7,7 +7,9 @@ const questionSchema = new mongoose.Schema(
       type: String,
       enum: [
         'frontend', 'backend', 'fullstack', 'mern', 'html', 'css',
-        'javascript', 'react', 'nodejs', 'mongodb', 'python',
+        'javascript', 'react',
+        'nodejs', 'mongodb', 'python', 'behavioral',
+        'devops', 'database',
         'data_structures', 'system_design', 'behavioral', 'hr',
       ],
       required: true,

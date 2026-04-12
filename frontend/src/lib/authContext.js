@@ -29,12 +29,14 @@ export const AuthProvider = ({ children }) => {
       try {
         const res = await api.get('/api/auth/me');
         setUser(res.data.user);
+        return res.data.user;
       } catch (err) {
         // Only treat 401 as "not logged in", not an error
         if (err.response?.status !== 401) {
           console.error('Auth check failed:', err);
         }
         setUser(null);
+        return null;
       } finally {
         setLoading(false);
         setInitialized(true);
@@ -54,8 +56,13 @@ export const AuthProvider = ({ children }) => {
         password,
       });
 
+      const user = await checkAuth();
+
+      if(!user) throw new Error("Auth sync failed");
+
       setUser(res.data.user);
-      return res.data;
+      // return res.data;
+      return user;
     } catch (err) {
       const message =
         err.response?.data?.message || 'Login failed';
@@ -80,7 +87,7 @@ export const AuthProvider = ({ children }) => {
       console.error('Logout error:', err);
     } finally {
       setUser(null);
-      window.location.href = '/login';
+      window.location.replace('/login');
     }
   };
 

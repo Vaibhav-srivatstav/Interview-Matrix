@@ -1,50 +1,64 @@
-import express  from 'express';
+import express from 'express';
 import axios from 'axios';
-import auth  from '../middleware/auth.js';
-import Session  from '../models/Session.js';
-import Resume  from '../models/Resume.js';
-import Question  from '../models/Question.js';
-import { generateQuestionsWithAI } from '../utils/aiHelper.js';
+import auth from '../middleware/auth.js';
+import Session from '../models/Session.js';
+import Resume from '../models/Resume.js';
+import Question from '../models/Question.js';
+// Correct way to import AI helpers in ESM
+import { generateFinalFeedback } from '../utils/aiHelper.js';
 
 const router = express.Router();
 
-// POST /api/interview/start  – create session + pick questions
+/**
+ * POST /api/interview/start
+ * Picks random questions from DB based on tech stack
+ */
 router.post('/start', auth, async (req, res) => {
   try {
-    const { resumeId, techStack, difficulty = 'medium', questionCount = 10 } = req.body;
-console.log("✅ START ROUTE HIT");
-    let stackToUse = techStack;
+    const { resumeId, techStack, difficulty = 'medium', questionCount = 5 } = req.body;
+    let stackToUse = techStack || [];
     let resumeDoc = null;
 
     if (resumeId) {
       resumeDoc = await Resume.findOne({ _id: resumeId, userId: req.user._id });
       if (!resumeDoc) return res.status(404).json({ message: 'Resume not found' });
-      stackToUse = resumeDoc.detectedTechStack;
+      // Use detected stack if available, otherwise fallback to provided techStack
+      stackToUse = resumeDoc.detectedTechStack && resumeDoc.detectedTechStack.length > 0 
+        ? resumeDoc.detectedTechStack 
+        : stackToUse;
     }
 
-    if (!stackToUse || !stackToUse.length)
+    if (!stackToUse || stackToUse.length === 0) {
       return res.status(400).json({ message: 'No tech stack provided or detected' });
-
-    // Fetch questions from DB for detected stack
-    let questions = await Question.find({
-      category: { $in: stackToUse },
-      difficulty,
-    }).limit(questionCount);
-
-    // If not enough questions, generate with AI
-    if (questions.length < questionCount) {
-      const aiQuestions = await generateQuestionsWithAI(
-        stackToUse,
-        difficulty,
-        questionCount - questions.length,
-        resumeDoc?.rawText
-      );
-      questions = [...questions, ...aiQuestions];
     }
 
-    // Shuffle questions
-    questions = questions.sort(() => Math.random() - 0.5).slice(0, questionCount);
+    // 1. RANDOM SELECTION: Using MongoDB $sample ensures variety every time
+    // We normalize the category names to lowercase to match typical DB entries
+    const normalizedStack = stackToUse.map(s => s.toLowerCase());
 
+    let questions = await Question.aggregate([
+      {
+        $match: {
+          category: { $in: normalizedStack },
+          difficulty: difficulty.toLowerCase()
+        }
+      },
+      { $sample: { size: parseInt(questionCount) } }
+    ]);
+
+    // 2. SAFETY FALLBACK: If DB has no matches for specific difficulty, try without difficulty filter
+    if (questions.length === 0) {
+      questions = await Question.aggregate([
+        { $match: { category: { $in: normalizedStack } } },
+        { $sample: { size: parseInt(questionCount) } }
+      ]);
+    }
+
+    if (questions.length === 0) {
+      return res.status(404).json({ message: "No questions found in database for these categories." });
+    }
+
+    // Create the session
     const session = await Session.create({
       userId: req.user._id,
       resumeId: resumeDoc?._id,
@@ -69,7 +83,9 @@ console.log("✅ START ROUTE HIT");
   }
 });
 
-// POST /api/interview/:sessionId/answer  – submit an answer
+/**
+ * POST /api/interview/:sessionId/answer
+ */
 router.post('/:sessionId/answer', auth, async (req, res) => {
   try {
     const { questionId, questionText, answerText, emotionSnapshots, voiceMetrics } = req.body;
@@ -81,11 +97,11 @@ router.post('/:sessionId/answer', auth, async (req, res) => {
     });
     if (!session) return res.status(404).json({ message: 'Session not found or not active' });
 
-    // Call ML service for NLP scoring
-    let nlpScore = 70; // default fallback
+    let nlpScore = 70; 
     let keywordMatchScore = 60;
     let aiFeedback = '';
 
+    // NLP Analysis via ML Service
     try {
       const mlResponse = await axios.post(`${process.env.ML_SERVICE_URL}/analyze_answer`, {
         question: questionText,
@@ -98,22 +114,20 @@ router.post('/:sessionId/answer', auth, async (req, res) => {
       console.warn('ML service unavailable, using fallback scores');
     }
 
-    // Calculate emotion-based confidence from snapshots
+    // Confidence Calculation
     const avgConfidence = emotionSnapshots?.length
-      ? emotionSnapshots.reduce((sum, s) => sum + (s.confidence_contribution || 0), 0) /
-        emotionSnapshots.length
+      ? emotionSnapshots.reduce((sum, s) => sum + (s.confidence_contribution || 0), 0) / emotionSnapshots.length
       : 65;
 
     const dominantEmotion = emotionSnapshots?.length
       ? getMostFrequentEmotion(emotionSnapshots)
       : 'neutral';
 
-    // Weighted overall score per answer
     const overallScore = Math.round(
       nlpScore * 0.5 +
-        keywordMatchScore * 0.2 +
-        avgConfidence * 0.2 +
-        (voiceMetrics?.clarity || 65) * 0.1
+      keywordMatchScore * 0.2 +
+      avgConfidence * 0.2 +
+      (voiceMetrics?.clarity || 65) * 0.1
     );
 
     session.answers.push({
@@ -145,7 +159,9 @@ router.post('/:sessionId/answer', auth, async (req, res) => {
   }
 });
 
-// POST /api/interview/:sessionId/complete
+/**
+ * POST /api/interview/:sessionId/complete
+ */
 router.post('/:sessionId/complete', auth, async (req, res) => {
   try {
     const session = await Session.findOne({
@@ -158,21 +174,27 @@ router.post('/:sessionId/complete', auth, async (req, res) => {
     session.completedAt = new Date();
     session.duration = Math.round((session.completedAt - session.startedAt) / 1000);
 
-    // Final scores
     const totalAnswers = session.answers.length;
     if (totalAnswers > 0) {
       session.overallPerformanceScore = Math.round(
         session.answers.reduce((s, a) => s + a.overallScore, 0) / totalAnswers
       );
-      session.overallConfidenceScore = session.calculateConfidence();
+      // Ensure your Session model has the calculateConfidence method defined
+      if (typeof session.calculateConfidence === 'function') {
+        session.overallConfidenceScore = session.calculateConfidence();
+      } else {
+        session.overallConfidenceScore = Math.round(
+            session.answers.reduce((s, a) => s + a.emotionSummary.avgConfidence, 0) / totalAnswers
+        );
+      }
     }
 
-    // Generate AI final feedback
+    // Final AI Feedback using the imported helper
     try {
-      const { generateFinalFeedback } = require('../utils/aiHelper');
       session.aiFinalFeedback = await generateFinalFeedback(session);
     } catch (e) {
-      session.aiFinalFeedback = 'Interview completed successfully.';
+      console.error("Feedback error:", e.message);
+      session.aiFinalFeedback = 'Interview completed successfully. Great effort!';
     }
 
     await session.save();
@@ -189,11 +211,11 @@ router.post('/:sessionId/complete', auth, async (req, res) => {
       },
     });
   } catch (err) {
+    console.error('Completion error:', err);
     res.status(500).json({ message: 'Failed to complete session' });
   }
 });
 
-// GET /api/interview/sessions  – user's session history
 router.get('/sessions', auth, async (req, res) => {
   try {
     const sessions = await Session.find({ userId: req.user._id })
@@ -206,7 +228,6 @@ router.get('/sessions', auth, async (req, res) => {
   }
 });
 
-// GET /api/interview/:sessionId  – full session result
 router.get('/:sessionId', auth, async (req, res) => {
   try {
     const session = await Session.findOne({

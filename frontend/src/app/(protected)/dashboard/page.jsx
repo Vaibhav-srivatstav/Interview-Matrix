@@ -13,6 +13,7 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip,
   ResponsiveContainer, AreaChart, Area
 } from 'recharts';
+import FullPageLoader from '@/components/FullPageLoader';
 
 /* ---------------- Score Badge ---------------- */
 function ScoreBadge({ score }) {
@@ -189,7 +190,7 @@ export default function DashboardPage() {
           <h2 className="font-semibold mb-4">Interview History</h2>
 
           {loading ? (
-            <div className="text-center py-10 text-gray-500">Loading...</div>
+            <FullPageLoader/>
           ) : sessions.length === 0 ? (
             <div className="text-center py-10">
               <p className="text-gray-500 mb-4">No interviews yet</p>

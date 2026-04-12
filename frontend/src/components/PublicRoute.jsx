@@ -1,6 +1,7 @@
 import { useAuth } from '@/lib/authContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import FullPageLoader from './FullPageLoader';
 
 export default function PublicRoute({ children }) {
   const { user, loading } = useAuth();
@@ -14,9 +15,7 @@ export default function PublicRoute({ children }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-gray-400">
-        Loading...
-      </div>
+      <FullPageLoader/>
     );
   }
 

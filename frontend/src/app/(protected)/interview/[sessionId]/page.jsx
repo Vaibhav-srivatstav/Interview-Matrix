@@ -31,22 +31,35 @@ export default function InterviewPage() {
   const timerRef = useRef(null);
 
   /* ---------------- Load Questions ---------------- */
-  useEffect(() => {
+useEffect(() => {
+  // 1. First, try to get questions for THIS specific session
+  const stored = sessionStorage.getItem(`questions_${sessionId}`);
+
+  if (stored) {
+    setQuestions(JSON.parse(stored));
+  } else {
+    // 2. If not in storage, fetch NEW random questions from API
     getSession(sessionId)
-      .then(() => {
-        const stored = sessionStorage.getItem(`questions_${sessionId}`);
-        if (stored) {
-          setQuestions(JSON.parse(stored));
+      .then(async () => {
+        // Fetch from your random-enabled endpoint
+        // Note: Make sure your getQuestions API call is actually hitting the backend
+        const response = await fetch(`/api/questions?limit=20`); 
+        const data = await response.json();
+        
+        if (data.questions && data.questions.length > 0) {
+          setQuestions(data.questions);
+          // Save them so they stay the same IF the user refreshes THIS session
+          sessionStorage.setItem(`questions_${sessionId}`, JSON.stringify(data.questions));
         } else {
-          toast.error('Session questions not found');
-          router.push('/dashboard');
+          toast.error('No questions found in database');
         }
       })
       .catch(() => {
         toast.error('Session not found');
         router.push('/dashboard');
       });
-  }, [sessionId]);
+  }
+}, [sessionId]);
 
   /* ---------------- Timer ---------------- */
   useEffect(() => {
@@ -83,7 +96,8 @@ export default function InterviewPage() {
 
     setSubmitting(true);
     try {
-      const res = await submitAnswer(sessionId, {
+      // 1. Send data to backend
+      await submitAnswer(sessionId, {
         questionId: q.id,
         questionText: q.text,
         answerText,
@@ -91,20 +105,25 @@ export default function InterviewPage() {
         voiceMetrics,
       });
 
-      setNlpScore(res.data.scores?.nlpScore || 65);
+      // 2. Clear buffers for the NEXT question
       emotionSnapshotsRef.current = [];
-      setAnswerText('');
+      setAnswerText(''); // Reset text box
+      setVoiceMetrics({ clarity: 65 }); // Reset metrics
 
+      // 3. Handle Navigation
       if (currentIdx + 1 >= questions.length) {
         await completeInterview(sessionId);
         setCompleted(true);
         clearInterval(timerRef.current);
         setTimeout(() => router.push(`/results/${sessionId}`), 2000);
       } else {
-        setCurrentIdx((i) => i + 1);
+        // Move to next question - React will re-render VoiceRecorder because of the key
+        setCurrentIdx((prev) => prev + 1);
+        toast.success('Answer submitted!');
       }
-    } catch {
-      toast.error('Submit failed');
+    } catch (error) {
+      console.error(error);
+      toast.error('Submit failed. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -134,6 +153,8 @@ export default function InterviewPage() {
 
   const currentQ = questions[currentIdx];
 
+  const progress = ((currentIdx + 1) / questions.length) * 100;
+
 
 
   /* ---------------- UI ---------------- */
@@ -145,13 +166,20 @@ export default function InterviewPage() {
         <span className="text-sm flex items-center gap-2 text-muted-foreground">
           <Clock size={14} /> {formatTime(timer)}
         </span>
+        <span className="text-sm text-muted-foreground">
+          Question {currentIdx + 1} of {questions.length}
+        </span>
       </div>
+      <div
+        className="h-2 bg-black dark:bg-white transition-all duration-500"
+        style={{ width: `${progress}%` }}
+      />
 
       <div className="max-w-6xl mx-auto px-4 py-6 grid lg:grid-cols-3 gap-6">
 
         {/* LEFT PANEL */}
         <div className="space-y-4">
-          <AIInterviewer question={currentQ.text} />
+
 
           <EmotionDetector
             sessionId={sessionId}
@@ -167,7 +195,7 @@ export default function InterviewPage() {
 
         {/* RIGHT PANEL */}
         <div className="lg:col-span-2 space-y-4">
-
+          <AIInterviewer key={`interviewer-${currentIdx}`}  question={currentQ.text} />
           {/* Question */}
           <div className="card">
             <h2 className="text-lg font-semibold text-[var(--foreground)]">
@@ -177,7 +205,7 @@ export default function InterviewPage() {
 
           {/* Answer */}
           <div className="card space-y-3">
-            <VoiceRecorder key={currentIdx}
+            <VoiceRecorder key={`recorder-${currentIdx}`}
               onTranscript={handleTranscript}
               onVoiceMetrics={handleVoiceMetrics}
             />
@@ -195,7 +223,7 @@ export default function InterviewPage() {
             disabled={submitting}
             className="btn-primary w-full flex justify-center gap-2 py-3"
           >
-            Next <ChevronRight size={18} />
+            {submitting ? 'Saving...' : currentIdx + 1 === questions.length ? 'Finish Interview' : 'Next Question'} <ChevronRight size={18} />
           </button>
 
         </div>
