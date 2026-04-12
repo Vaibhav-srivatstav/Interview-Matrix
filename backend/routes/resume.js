@@ -73,7 +73,7 @@ router.post('/upload', auth, upload.single('resume'), async (req, res) => {
     res.status(201).json({
       message: 'Resume uploaded and analyzed successfully',
       resume: {
-        id: resume._id,
+        id: resume.id,
         detectedTechStack: resume.detectedTechStack,
         detectedSkills: resume.detectedSkills,
         experience: resume.experience,

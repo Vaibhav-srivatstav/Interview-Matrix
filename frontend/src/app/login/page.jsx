@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '/src/lib/authContext';
 import toast from 'react-hot-toast';
 import Image from 'next/image';
-import { LoginForm } from '@/components/auth/login_form'
+import { LoginForm } from '@/components/auth/login_form.js'
 
 export default function LoginPage() {
   const { login } = useAuth();

@@ -164,6 +164,7 @@ export const getMe = async (req, res) => {
                 message: 'User not found'
             });
         }
+        
 
         let avatarToSend = user.avatar;
         try {

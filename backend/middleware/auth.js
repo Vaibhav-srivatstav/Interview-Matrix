@@ -11,11 +11,13 @@ export default function auth(req, res, next) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = { _id: decoded.userId };
 
+
     next();
   }  catch (err) {
         return res.status(401).json({
             success: false,
             message: 'Token is not valid'
+            
         });
     }
 }

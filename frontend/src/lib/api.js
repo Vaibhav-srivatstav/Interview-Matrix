@@ -24,6 +24,15 @@ api.interceptors.response.use(
   }
 );
 
+// // ── Auth ───────────────────────────────────────────────────────────────────
+// export const loginUser    = (data) => api.post('/auth/login', data);
+// export const registerUser = (data) => api.post('/auth/register', data);
+// export const getMe        = ()     => api.get('/auth/me');
+
+// // ── Profile ────────────────────────────────────────────────────────────────
+// export const getProfile    = ()     => api.get('/profile');
+// export const updateProfile = (data) => api.put('/profile', data);
+
 // ── Resume ─────────────────────────────────────────────────────────────────
 export const uploadResume = (formData) => api.post('/resume/upload', formData, {
   headers: { 'Content-Type': 'multipart/form-data' },

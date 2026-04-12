@@ -42,15 +42,13 @@ function MobileDrawer({ user, navLinks, onLogin, onRegister, onLogout, onClose }
         
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-300 dark:border-gray-800">
-          <Link href="/" className="flex items-center gap-2 group">
             <div className="size-8 rounded-full flex items-center justify-center transition-transform duration-300 group-hover:rotate-12">
               <span className="font-bold text-xl">
                 <Image src={logo} alt="Logo" width={48} height={50} className="block dark:hidden" />
                 <Image src={logo2} alt="Logo" width={48} height={50} className="hidden dark:block" />
               </span>
             </div>
-            <span className="hidden sm:inline font-semibold text-sm text-black dark:text-white">Jobify</span>
-          </Link>
+            <span className="hidden sm:inline font-semibold text-sm text-black dark:text-white">Interview Matrix</span>
           <button onClick={onClose}>
             <X size={18} />
           </button>

@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.post('/register', register);
 router.post('/login', login);
-router.get('/logout', logout);
+router.post('/logout', logout);
 router.get('/me', auth, getMe); // Used to check if user is still logged in
 router.post('/google', googleLogin);
 
