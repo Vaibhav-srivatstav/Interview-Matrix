@@ -4,6 +4,11 @@ const resumeSchema = new mongoose.Schema(
   {
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     originalName: String,
+    name: String,
+    email: String,
+    phone: String,
+    location: String,
+    avatar: String,
     filePath: String,
     rawText: String,
     detectedSkills: [{ type: String }],

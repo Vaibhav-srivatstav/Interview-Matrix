@@ -1,19 +1,10 @@
-import express from 'express';
-import axios from 'axios';
-import auth from '../middleware/auth.js';
 import Session from '../models/Session.js';
 import Resume from '../models/Resume.js';
 import Question from '../models/Question.js';
-// Correct way to import AI helpers in ESM
+import axios from 'axios';
 import { generateFinalFeedback } from '../utils/aiHelper.js';
 
-const router = express.Router();
-
-/**
- * POST /api/interview/start
- * Picks random questions from DB based on tech stack
- */
-router.post('/start', auth, async (req, res) => {
+export const startInterview = async (req, res) => {
   try {
     const { resumeId, techStack, difficulty = 'medium', questionCount = 5 } = req.body;
     let stackToUse = techStack || [];
@@ -81,12 +72,9 @@ router.post('/start', auth, async (req, res) => {
     console.error('Start interview error:', err);
     res.status(500).json({ message: 'Failed to start interview', error: err.message });
   }
-});
+};
 
-/**
- * POST /api/interview/:sessionId/answer
- */
-router.post('/:sessionId/answer', auth, async (req, res) => {
+export const getAnswer =async (req, res) => {
   try {
     const { questionId, questionText, answerText, emotionSnapshots, voiceMetrics } = req.body;
 
@@ -157,12 +145,9 @@ router.post('/:sessionId/answer', auth, async (req, res) => {
     console.error('Answer submission error:', err);
     res.status(500).json({ message: 'Failed to save answer' });
   }
-});
+};
 
-/**
- * POST /api/interview/:sessionId/complete
- */
-router.post('/:sessionId/complete', auth, async (req, res) => {
+export const sessioncomplete =async (req, res) => {
   try {
     const session = await Session.findOne({
       _id: req.params.sessionId,
@@ -214,9 +199,9 @@ router.post('/:sessionId/complete', auth, async (req, res) => {
     console.error('Completion error:', err);
     res.status(500).json({ message: 'Failed to complete session' });
   }
-});
+};
 
-router.get('/sessions', auth, async (req, res) => {
+export const getsession =async (req, res) => {
   try {
     const sessions = await Session.find({ userId: req.user._id })
       .select('-answers.emotionSummary.snapshots')
@@ -226,9 +211,9 @@ router.get('/sessions', auth, async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
-});
+};
 
-router.get('/:sessionId', auth, async (req, res) => {
+export const getsessionid = async (req, res) => {
   try {
     const session = await Session.findOne({
       _id: req.params.sessionId,
@@ -239,7 +224,7 @@ router.get('/:sessionId', auth, async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
-});
+};
 
 function getMostFrequentEmotion(snapshots) {
   const counts = {};
@@ -249,5 +234,3 @@ function getMostFrequentEmotion(snapshots) {
   });
   return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'neutral';
 }
-
-export default router;

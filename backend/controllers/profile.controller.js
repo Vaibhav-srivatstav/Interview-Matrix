@@ -1,20 +1,20 @@
-import CandidateProfile from "../models/CandidateProfile.js";
+import Resume from "../models/Resume.js";
 import User from "../models/User.js";
 
 
 export const getProfile = async (req, res) => {
   try {
-    const userId = req.user._id; // ✅ always use this
+    const userId = req.user._id;
 
-    const profile = await CandidateProfile.findOne({ userId: userId.toString() });
+    const resume = await Resume.findOne({ userId: userId.toString() });
     const user = await User.findById(userId);
 
     if (!user) return res.status(404).json({ msg: "User not found" });
 
     let finalProfile = {};
 
-    if (profile) {
-      finalProfile = profile.toObject();
+    if (resume) {
+      finalProfile = resume.toObject();
 
       if (!finalProfile.avatar) finalProfile.avatar = user.avatar;
       if (!finalProfile.name) finalProfile.name = user.name;
@@ -26,10 +26,12 @@ export const getProfile = async (req, res) => {
         name: user.name,
         email: user.email,
         avatar: user.avatar,
-        skills: [],
-        experience: [],
-        projects: [],
-        education: []
+        skills: resume ? resume.detectedSkills : [],
+        experience: resume ? resume.experience : [],
+        projects: resume ? resume.projects : [],
+        education: resume ? resume.education : [],
+        summary: resume ? resume.summary : "",
+        resumeId: resume ? resume._id : null
       };
     }
 
@@ -42,18 +44,26 @@ export const getProfile = async (req, res) => {
 };
 
 export const updateProfile = async (req, res) => {
-    try {
-        const userId = req.user._id;
-        const updates = req.body;
-        
-        const profile = await CandidateProfile.findOneAndUpdate(
-            { userId: userId.toString()},
-            { $set: updates },
-            { new: true, upsert: true } 
-        );
+  try {
+    const userId = req.user._id;
+    const updates = req.body;
+    
+    const resumeUpdates = {
+      detectedSkills: updates.skills,
+      experience: updates.experience,
+      projects: updates.projects,
+      education: updates.education,
+      summary: updates.summary
+    };
 
-        res.json({ success: true, profile });
-    } catch (err) {
-        res.status(500).send('Server Error');
-    }
+    const profile = await Resume.findOneAndUpdate(
+      { userId: userId.toString() },
+      { $set: resumeUpdates },
+      { new: true, upsert: true }
+    );
+
+    res.json({ success: true, profile });
+  } catch (err) {
+    res.status(500).send('Server Error');
+  }
 };

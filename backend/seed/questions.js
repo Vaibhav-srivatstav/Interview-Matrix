@@ -628,6 +628,3 @@ async function seed() {
 }
 
 seed();
-
-// NOTE: append more questions before the seed() call above
-// The insertMany is at the end of the QUESTIONS array — add to the array above

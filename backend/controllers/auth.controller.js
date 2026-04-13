@@ -2,7 +2,7 @@ import User from '../models/User.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { OAuth2Client } from "google-auth-library";
-import CandidateProfile from '../models/CandidateProfile.js';
+import CandidateProfile from '../models/Resume.js';
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -60,8 +60,6 @@ export const register = async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        console.log("PLAIN PASSWORD:", password);
-        console.log("HASHED PASSWORD:", hashedPassword);
 
         await User.create({
             name,
@@ -88,12 +86,10 @@ export const login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        console.log("REQ BODY:", req.body);
 
         const normalizedEmail = email.toLowerCase();
 
         const user = await User.findOne({ email:normalizedEmail });
-        console.log("USER FOUND:", user);
 
         if (!user) {
             console.log("❌ User not found");
@@ -111,11 +107,7 @@ export const login = async (req, res) => {
             });
         }
 
-        console.log("Entered password:", password);
-        console.log("Stored password:", user.password);
-
         const isMatch = await bcrypt.compare(password, user.password);
-        console.log("PASSWORD MATCH:", isMatch);
 
         if (!isMatch) {
             console.log("❌ Password mismatch");
@@ -124,8 +116,6 @@ export const login = async (req, res) => {
                 message: 'Invalid credentials'
             });
         }
-
-        console.log("✅ Login success");
         sendTokenResponse(user, res);
 
     } catch (err) {

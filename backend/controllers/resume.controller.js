@@ -1,5 +1,4 @@
 import Resume from "../models/Resume.js";
-import CandidateProfile from "../models/CandidateProfile.js";
 import { detectTechStack, extractResumeData } from "../utils/resumeParser.js";
 import fs from "fs";
 import pdfParse from "pdf-parse";
@@ -60,7 +59,7 @@ export const uploadResume = async (req, res) => {
     });
 
     // ✅ Update or create profile
-    const profile = await CandidateProfile.findOneAndUpdate(
+    const profile = await Resume.findOneAndUpdate(
       { userId },
       {
         $set: {

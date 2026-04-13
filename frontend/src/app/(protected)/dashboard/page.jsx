@@ -78,7 +78,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login');
-      return;
+      return; 
     }
 
     getSessions()

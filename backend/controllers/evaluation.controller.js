@@ -1,12 +1,7 @@
-import express from 'express';
-import axios from 'axios';
-import auth from '../middleware/auth.js';
 import Session from '../models/Session.js';
+import axios from 'axios';
 
-const router = express.Router();
-
-// POST /api/evaluation/emotion  – receive frame, call ML, return emotion
-router.post('/emotion', auth, async (req, res) => {
+export const postemotion = async (req, res) => {
   try {
     const { frameBase64, sessionId } = req.body;
     if (!frameBase64) return res.status(400).json({ message: 'No frame data' });
@@ -36,10 +31,9 @@ router.post('/emotion', auth, async (req, res) => {
       error: 'ML service unavailable',
     });
   }
-});
+};
 
-// POST /api/evaluation/voice  – analyze voice/speech metrics
-router.post('/voice', auth, async (req, res) => {
+export const postvoice = async (req, res) => {
   try {
     const { audioBase64, sessionId } = req.body;
 
@@ -60,10 +54,9 @@ router.post('/voice', auth, async (req, res) => {
       error: 'Voice analysis unavailable',
     });
   }
-});
+};
 
-// GET /api/evaluation/session/:id/report  – full confidence report
-router.get('/session/:id/report', auth, async (req, res) => {
+export const getReport = async (req, res) => {
   try {
     const session = await Session.findOne({
       _id: req.params.id,
@@ -76,7 +69,7 @@ router.get('/session/:id/report', auth, async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
-});
+};
 
 function buildConfidenceReport(session) {
   const answers = session.answers || [];
@@ -118,5 +111,3 @@ function buildConfidenceReport(session) {
     techStack: session.techStack,
   };
 }
-
-export default router;

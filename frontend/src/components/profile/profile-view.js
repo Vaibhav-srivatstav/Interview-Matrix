@@ -27,7 +27,10 @@ import {
   Loader2,
   Save,
   Check,
-  X
+  X,
+  Briefcase,
+  GraduationCap,
+  FolderGit2
 } from "lucide-react"
 import { useEffect, useState } from "react"
 
@@ -268,6 +271,9 @@ export function ProfileView() {
       technical: [],
       soft: [],
     },
+    experience: [],
+    projects: [],
+    education: [],
     resumeUploaded: false,
   })
 
@@ -303,6 +309,9 @@ export function ProfileView() {
             technical: data.skills || [],
             soft: []
           },
+          experience: data.experience || [],
+          projects: data.projects || [],
+          education: data.education || [],
           resumeUploaded: true
         })
       }
@@ -324,6 +333,9 @@ export function ProfileView() {
         location: profile.personalInfo.location,
         summary: profile.personalInfo.summary,
         skills: [...profile.skills.technical, ...profile.skills.soft],
+        experience: profile.experience,
+        projects: profile.projects,
+        education: profile.education,
         avatar: profile.personalInfo.avatar
       }
 
@@ -360,6 +372,20 @@ export function ProfileView() {
     setProfile({ ...profile, skills: { ...profile.skills, [type]: updated } })
   }
 
+  const handleGeneralAdd = (section, value) => {
+    if (!value.trim()) return;
+    setProfile(prev => ({
+      ...prev,
+      [section]: [...prev[section], value.trim()]
+    }));
+  };
+
+  const removeGeneralItem = (section, idx) => {
+    const updated = [...profile[section]];
+    updated.splice(idx, 1);
+    setProfile(prev => ({ ...prev, [section]: updated }));
+  };
+
   // --- 4. UPLOAD HANDLERS ---
   const handleResumeUpload = async (file) => {
     const formData = new FormData()
@@ -376,7 +402,7 @@ export function ProfileView() {
 
       if (res.ok) {
         const data = await res.json()
-        const newProfileData = data?.data?. profile || data.resume;
+        const newProfileData = data?.data?.profile || data.resume;
         if (!newProfileData) {
           console.error("Profile missing in response:", data);
           return;
@@ -395,13 +421,15 @@ export function ProfileView() {
           },
           skills: {
             technical: newProfileData.skills ||
-              newProfileData.detectedSkills || 
+              newProfileData.detectedSkills ||
               prev.skills.technical,
             soft: prev.skills.soft,
           },
-          experience: newProfileData?.experience || [],
-          education: newProfileData?.education || [],
-          projects: newProfileData?.projects || [],
+          experience: newProfileData.experience || [],
+          projects: newProfileData.projects || [],
+          education: newProfileData.education?.map(edu =>
+            `${edu.institution} - ${edu.degree} (${edu.year || 'N/A'})`
+          ) || [],
           resumeUploaded: true,
         }));
 
@@ -743,51 +771,21 @@ export function ProfileView() {
                 )}
               </AccordionContent>
             </AccordionItem>
-            {/* education */}
-            {/* <AccordionItem value="education">
+            {/* Experience Section */}
+            <AccordionItem value="experience">
               <AccordionTrigger className="hover:no-underline flex justify-between items-center">
                 <div className="flex items-center gap-2">
-                  <Code className="size-5" />
-                  <span className="font-semibold">Education </span>
+                  <Briefcase className="size-5" />
+                  <span className="font-semibold">Experience</span>
                 </div>
-
-                <AddSkillWidget onAdd={(val) => handleSkillAdd("education", val)} />
-
+                <AddSkillWidget onAdd={(val) => handleGeneralAdd("experience", val)} />
               </AccordionTrigger>
-
               <AccordionContent className="pt-2 flex flex-wrap gap-2">
-                {profile.education.length ? (
-                  profile.education.map((education, idx) => (
-                    <div key={idx} className="flex items-center gap-2 px-3 py-1 border rounded-full text-sm">
-                      <span>{education}</span>
-                      <button onClick={() => removeSkill("education", idx)} className="text-muted-foreground hover:text-red-500">
-                        <X className="size-3" />
-                      </button>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-muted-foreground">No education added</p>
-                )}
-              </AccordionContent>
-            </AccordionItem> */}
-            {/* education */}
-            {/* <AccordionItem value="education">
-              <AccordionTrigger className="hover:no-underline flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <Code className="size-5" />
-                  <span className="font-semibold">Education </span>
-                </div>
-
-                <AddSkillWidget onAdd={(val) => handleSkillAdd("education", val)} />
-
-              </AccordionTrigger>
-
-              <AccordionContent className="pt-2 flex flex-wrap gap-2">
-                {profile.education.length ? (
-                  profile.education.map((skill, idx) => (
-                    <div key={idx} className="flex items-center gap-2 px-3 py-1 border rounded-full text-sm">
-                      <span>{skill}</span>
-                      <button onClick={() => removeSkill("soft", idx)} className="text-muted-foreground hover:text-red-500">
+                {(profile.experience || []).length ? (
+                  profile.experience.map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-2 px-3 py-1 border rounded-full text-sm bg-blue-50/50 dark:bg-blue-900/20">
+                      <span>{item}</span>
+                      <button onClick={() => removeGeneralItem("experience", idx)} className="text-muted-foreground hover:text-red-500">
                         <X className="size-3" />
                       </button>
                     </div>
@@ -796,34 +794,57 @@ export function ProfileView() {
                   <p className="text-sm text-muted-foreground">No experience added</p>
                 )}
               </AccordionContent>
-            </AccordionItem> */}
-            {/* education */}
-            {/* <AccordionItem value="project">
+            </AccordionItem>
+
+            {/* Projects Section */}
+            <AccordionItem value="projects">
               <AccordionTrigger className="hover:no-underline flex justify-between items-center">
                 <div className="flex items-center gap-2">
-                  <Code className="size-5" />
-                  <span className="font-semibold">Project </span>
+                  <FolderGit2 className="size-5" />
+                  <span className="font-semibold">Projects</span>
                 </div>
-
-                <AddSkillWidget onAdd={(val) => handleSkillAdd("project", val)} />
-
+                <AddSkillWidget onAdd={(val) => handleGeneralAdd("projects", val)} />
               </AccordionTrigger>
-
               <AccordionContent className="pt-2 flex flex-wrap gap-2">
-                {profile.project.length ? (
-                  profile.project.map((project, idx) => (
-                    <div key={idx} className="flex items-center gap-2 px-3 py-1 border rounded-full text-sm">
-                      <span>{project}</span>
-                      <button onClick={() => removeSkill("project", idx)} className="text-muted-foreground hover:text-red-500">
+                {profile.projects.length ? (
+                  profile.projects.map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-2 px-3 py-1 border rounded-full text-sm bg-green-50/50 dark:bg-green-900/20">
+                      <span>{item}</span>
+                      <button onClick={() => removeGeneralItem("projects", idx)} className="text-muted-foreground hover:text-red-500">
                         <X className="size-3" />
                       </button>
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-muted-foreground">No project added</p>
+                  <p className="text-sm text-muted-foreground">No projects added</p>
                 )}
               </AccordionContent>
-            </AccordionItem> */}
+            </AccordionItem>
+
+            {/* Education Section */}
+            <AccordionItem value="education">
+              <AccordionTrigger className="hover:no-underline flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <GraduationCap className="size-5" />
+                  <span className="font-semibold">Education</span>
+                </div>
+                <AddSkillWidget onAdd={(val) => handleGeneralAdd("education", val)} />
+              </AccordionTrigger>
+              <AccordionContent className="pt-2 flex flex-wrap gap-2">
+                {profile.education.length ? (
+                  profile.education.map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-2 px-3 py-1 border rounded-full text-sm bg-purple-50/50 dark:bg-purple-900/20">
+                      <span>{item}</span>
+                      <button onClick={() => removeGeneralItem("education", idx)} className="text-muted-foreground hover:text-red-500">
+                        <X className="size-3" />
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">No education added</p>
+                )}
+              </AccordionContent>
+            </AccordionItem>
           </Accordion>
         </CardContent>
       </Card>

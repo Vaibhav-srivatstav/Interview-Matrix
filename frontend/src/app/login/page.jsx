@@ -6,24 +6,7 @@ import toast from 'react-hot-toast';
 import { LoginForm } from '@/components/auth/login_form.js'
 
 export default function LoginPage() {
-  const { login } = useAuth();
-  const router = useRouter();
-  const [form, setForm] = useState({ email: '', password: '' });
-  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await login(form.email, form.password);
-      toast.success('Welcome back!');
-      router.push('/dashboard');
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Login failed');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-background via-background to-muted p-4">
