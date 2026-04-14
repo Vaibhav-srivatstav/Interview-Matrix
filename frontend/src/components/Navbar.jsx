@@ -7,6 +7,7 @@ import { X, Menu, LogOut, Sun, Moon } from 'lucide-react';
 import Image from 'next/image';
 import logo from '../../public/logo.png';
 import logo2 from '../../public/logo2.png';
+import Link from 'next/link';
 
 /* ---------------- Theme Hook ---------------- */
 function useTheme() {
@@ -57,9 +58,9 @@ function MobileDrawer({ user, navLinks, onLogin, onRegister, onLogout, onClose }
         {/* Links (UNCHANGED) */}
         <nav className="flex-1 px-3 py-4 space-y-1">
           {navLinks.map(({ label, href }) => (
-            <a key={label} href={href} className="block px-3 py-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white">
+            <Link key={label} href={href} className="block px-3 py-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white">
               {label}
-            </a>
+            </Link>
           ))}
         </nav>
 
@@ -96,8 +97,8 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     router.push('/');
   };
 
@@ -156,10 +157,10 @@ export default function Navbar() {
         {/* Links (UNCHANGED UI) */}
         <div className="hidden md:flex items-center gap-6 ml-7">
           {navLinks.map(({ label, href }) => (
-            <a key={label} href={href} className="relative overflow-hidden h-6 group">
+            <Link key={label} href={href} className="relative overflow-hidden h-6 group">
               <span className="block group-hover:-translate-y-full transition-transform duration-300">{label}</span>
               <span className="block absolute top-full left-0 group-hover:translate-y-[-100%] transition-transform duration-300">{label}</span>
-            </a>
+            </Link>
           ))}
         </div>
 

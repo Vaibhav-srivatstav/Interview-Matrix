@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-const api = axios.create({ baseURL: `${API_URL}/api`, withCredentials:true });
+const api = axios.create({ baseURL: `${API_URL}/api`, withCredentials: true });
 
 // api.interceptors.request.use((config) => {
 //   const token = localStorage.getItem('token');
@@ -16,23 +16,27 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    const { status, config } = err;
+    const currentPath = window.location.pathname;
+
+    if (status === 401 && !currentPath.startsWith('/login')) {
+
       localStorage.removeItem('isLoggedIn');
       localStorage.removeItem('user');
-      const publicPages = ['/login', '/register', '/'];
-      if (!publicPages.includes(window.location.pathname)) {
-        window.location.href = '/login';
-      }
+      window.location.href = '/login';
+    } else if (status === 401) {
+      return Promise.reject(err);
     }
     return Promise.reject(err);
   }
 );
 
 // ── Auth ───────────────────────────────────────────────────────────────────
-export const loginUser    = (data) => api.post('/auth/login', data);
+export const loginUser = (data) => { console.log("Sending to Backend:", data); api.post('/auth/login', data); }
 export const registerUser = (data) => api.post('/auth/register', data);
-export const getMe        = ()     => api.get('/auth/me');
+export const getMe = () => api.get('/auth/me');
 export const loginWithGoogle = (token) => api.post('/auth/google', { token });
+export const logoutUser = () => api.post('/auth/logout');
 
 // // ── Profile ────────────────────────────────────────────────────────────────
 // export const getProfile    = ()     => api.get('/profile');

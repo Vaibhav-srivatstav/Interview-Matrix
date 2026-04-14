@@ -10,6 +10,16 @@ const nextConfig = {
     NEXT_PUBLIC_SOCKET_URL:
       process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000",
   },
+  async rewrites() {
+    return [
+      {
+        // All requests that start with /api/ …
+        source: "/api/:path*",
+        // … are forwarded to the API URL
+        destination: `${process.env.NEXT_PUBLIC_API_URL}/:path*`,
+      },
+    ];
+  },
 
   async headers() {
     return [

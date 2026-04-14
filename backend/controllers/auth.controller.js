@@ -17,6 +17,7 @@ const sendTokenResponse = async (user, res) => {
         httpOnly: true,
         secure: isProd,
         sameSite: isProd ? 'none' : 'lax',
+        path: '/',
         maxAge: 30 * 24 * 60 * 60 * 1000
     });
 
@@ -85,7 +86,7 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
     try {
         const { email, password } = req.body;
-        
+
         if (!email) {
             return res.status(400).json({ message: "Please provide an email" });
         }
@@ -133,11 +134,13 @@ export const login = async (req, res) => {
 
 export const logout = (req, res) => {
     const isProd = process.env.NODE_ENV === 'production';
+    const cookiePath = '/';
 
     res.clearCookie('token', {
         httpOnly: true,
-        secure: false,
-        sameSite: isProd ? 'none' : 'lax'
+        secure: isProd,
+        sameSite: isProd ? 'none' : 'lax',
+        path: cookiePath
     });
     res.status(200).json({
         success: true,

@@ -1,18 +1,8 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import axios from 'axios';
-
-/**
- * Centralized API instance
- */
-const API =
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-
-const api = axios.create({
-  baseURL: API,
-  withCredentials: true,
-});
+// Import only what you need from your central api file
+import api, { getMe, logoutUser } from '@/lib/api';
 
 const AuthContext = createContext(null);
 
@@ -24,60 +14,75 @@ export const AuthProvider = ({ children }) => {
   /**
    * Check session on app load
    */
-
   const checkAuth = async () => {
+     if (localStorage.getItem('isLoggedIn') !== 'true') {
+      setUser(null);
+      setLoading(false);
+      setInitialized(true);
+      return;
+    }
     try {
-      const res = await api.get('/api/auth/me');
-      setUser(res.data.user);
+      const res = await getMe();
+      const userData = res.data.user;
+
+      setUser(userData);
       localStorage.setItem("isLoggedIn", "true");
-      localStorage.setItem("user", JSON.stringify(res.data.user));
-      return res.data.user
+      localStorage.setItem("user", JSON.stringify(userData));
+      return userData;
     } catch (err) {
+      // Don't log error for 401 as it's expected when not logged in
       if (err.response?.status !== 401) {
         console.error('Auth check failed:', err);
       }
       setUser(null);
       localStorage.removeItem("isLoggedIn");
       localStorage.removeItem("user");
+      localStorage.clear();
       return null;
     } finally {
       setLoading(false);
       setInitialized(true);
     }
   };
+
   useEffect(() => {
     checkAuth();
   }, []);
 
   /**
-   * LOGIN
+   * LOGIN (Manual Email/Password)
    */
   const login = async (email, password) => {
     try {
-      const res = await api.post('/api/auth/login', {
-        email,
-        password,
-      });
+      // 1. One single call to login
+      localStorage.removeItem("user");
+      localStorage.removeItem("isLoggedIn");
 
-      const user = await checkAuth();
+      const res = await api.post('/auth/login', { email, password });
+      const userData = res.data.user;
 
-      if (!user) throw new Error("Auth sync failed");
+      // 2. Set state immediately from the login response
+      setUser(userData);
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("user", JSON.stringify(userData));
 
-      setUser(res.data.user);
-      // return res.data;
-      return user;
+      return userData;
     } catch (err) {
-      const message =
-        err.response?.data?.message || 'Login failed';
+      console.error('Login error response:', err.response?.data);
+      const message = err.response?.data?.message || 'Login failed';
       throw new Error(message);
     }
   };
 
   /**
-   * GOOGLE LOGIN (after OAuth callback)
+   * GOOGLE LOGIN (Updates state after component callback)
    */
   const setGoogleUser = (userData) => {
-    setUser(userData);
+    if (userData) {
+      setUser(userData);
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("user", JSON.stringify(userData));
+    }
   };
 
   /**
@@ -85,18 +90,18 @@ export const AuthProvider = ({ children }) => {
    */
   const logout = async () => {
     try {
-      await api.post('/api/auth/logout');
+      await logoutUser(); // Use the helper from api.js
     } catch (err) {
       console.error('Logout error:', err);
     } finally {
       setUser(null);
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('user');
+      localStorage.clear();
       window.location.replace('/login');
     }
   };
 
-  /**
-   * SAFE CONTEXT VALUE
-   */
   const value = {
     user,
     setUser,
@@ -114,17 +119,10 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-/**
- * SAFE HOOK (prevents misuse outside provider)
- */
 export const useAuth = () => {
   const context = useContext(AuthContext);
-
   if (!context) {
-    throw new Error(
-      'useAuth must be used inside AuthProvider'
-    );
+    throw new Error('useAuth must be used inside AuthProvider');
   }
-
   return context;
 };
