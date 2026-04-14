@@ -32,6 +32,7 @@ export const AuthProvider = ({ children }) => {
         return res.data.user;
       } catch (err) {
         // Only treat 401 as "not logged in", not an error
+        localStorage.removeItem("isLoggedIn");
         if (err.response?.status !== 401) {
           console.error('Auth check failed:', err);
         }
