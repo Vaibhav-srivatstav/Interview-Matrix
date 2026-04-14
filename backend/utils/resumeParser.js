@@ -128,13 +128,17 @@ function extractProjects(text) {
     let current = null;
 
     lines.forEach((line) => {
-      if (line.length < 60 && /[A-Z]/.test(line[0])) {
+      const trimmedLine = line.trim();
+
+      const isPossiblyTitle = trimmedLine.length < 50 && !trimmedLine.endsWith('.');
+
+      if (isPossiblyTitle && /[A-Z]/.test(trimmedLine[0])) {
         if (current) projects.push(current);
-        current = { name: line.trim(), tech: [], description: '' };
+        current = { name: trimmedLine, tech: [], description: '' };
       } else if (current) {
-        const techMatched = extractSkills(line);
+        const techMatched = extractSkills(trimmedLine);
         current.tech = [...new Set([...current.tech, ...techMatched])];
-        current.description += ' ' + line.trim();
+        current.description += ' ' + trimmedLine;
       }
     });
 

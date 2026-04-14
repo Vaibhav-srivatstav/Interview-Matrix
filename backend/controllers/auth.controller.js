@@ -2,7 +2,7 @@ import User from '../models/User.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { OAuth2Client } from "google-auth-library";
-import CandidateProfile from '../models/Resume.js';
+import Resume from '../models/Resume.js';
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -23,9 +23,9 @@ const sendTokenResponse = async (user, res) => {
     let avatarToSend = user.avatar;
     let skillsToSend = user.skills || [];
     try{
-        const candidateProfile = await CandidateProfile.findOne({ userId: user._id });
-        if(candidateProfile && candidateProfile.avatar){
-            avatarToSend = candidateProfile.avatar;
+        const resume = await Resume.findOne({ userId: user._id });
+        if(resume && resume.avatar){
+            avatarToSend = resume.avatar;
         }   
     } catch(err){
         res.status(500).json({msg: "Server error"});
@@ -158,9 +158,9 @@ export const getMe = async (req, res) => {
 
         let avatarToSend = user.avatar;
         try {
-            const candidateProfile = await CandidateProfile.findOne({ userId });
-            if (candidateProfile && candidateProfile.avatar) {
-                avatarToSend = candidateProfile.avatar;
+            const resume = await Resume.findOne({ userId });
+            if (resume && resume.avatar) {
+                avatarToSend = resume.avatar;
             }
         } catch (e) {}
 

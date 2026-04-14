@@ -306,8 +306,8 @@ export function ProfileView() {
             avatar: data.avatar || ""
           },
           skills: {
-            technical: data.skills || [],
-            soft: []
+            technical: data.skills || data.detectedSkills || [],
+            soft: data.softSkills ||[]
           },
           experience: data.experience || [],
           projects: data.projects || [],
@@ -834,7 +834,7 @@ export function ProfileView() {
                 {profile.education.length ? (
                   profile.education.map((item, idx) => (
                     <div key={idx} className="flex items-center gap-2 px-3 py-1 border rounded-full text-sm bg-purple-50/50 dark:bg-purple-900/20">
-                      <span>{item}</span>
+                      <span>{item.degree} from {item.institution} ({item.year || 'N/A'})</span>
                       <button onClick={() => removeGeneralItem("education", idx)} className="text-muted-foreground hover:text-red-500">
                         <X className="size-3" />
                       </button>
