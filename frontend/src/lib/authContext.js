@@ -26,12 +26,7 @@ export const AuthProvider = ({ children }) => {
    */
   useEffect(() => {
     const checkAuth = async () => {
-      const hasStatus = localStorage.getItem("isLoggedIn") === "true";
-    if (!hasStatus) {
-      setLoading(false);
-      return; 
-    }
-    
+
       try {
         const res = await api.get('/api/auth/me');
         setUser(res.data.user);
