@@ -15,20 +15,20 @@ const sendTokenResponse = async (user, res) => {
     const isProd = process.env.NODE_ENV === 'production';
     res.cookie('token', token, {
         httpOnly: true,
-        secure: isProd,                
+        secure: isProd,
         sameSite: isProd ? 'none' : 'lax',
-        maxAge: 30 * 24 * 60 * 60 * 1000 
+        maxAge: 30 * 24 * 60 * 60 * 1000
     });
 
     let avatarToSend = user.avatar;
     let skillsToSend = user.skills || [];
-    try{
+    try {
         const resume = await Resume.findOne({ userId: user._id });
-        if(resume && resume.avatar){
+        if (resume && resume.avatar) {
             avatarToSend = resume.avatar;
-        }   
-    } catch(err){
-        res.status(500).json({msg: "Server error"});
+        }
+    } catch (err) {
+        res.status(500).json({ msg: "Server error" });
         return;
     }
 
@@ -49,7 +49,7 @@ export const register = async (req, res) => {
     try {
         const { name, email, password } = req.body;
         const normalizedEmail = email.toLowerCase();
-        const existingUser = await User.findOne({ email:normalizedEmail });
+        const existingUser = await User.findOne({ email: normalizedEmail });
         if (existingUser) {
             return res.status(400).json({
                 success: false,
@@ -63,7 +63,7 @@ export const register = async (req, res) => {
 
         await User.create({
             name,
-            email:normalizedEmail,
+            email: normalizedEmail,
             password: hashedPassword
         });
 
@@ -85,11 +85,14 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
     try {
         const { email, password } = req.body;
-
+        
+        if (!email) {
+            return res.status(400).json({ message: "Please provide an email" });
+        }
 
         const normalizedEmail = email.toLowerCase();
 
-        const user = await User.findOne({ email:normalizedEmail });
+        const user = await User.findOne({ email: normalizedEmail });
 
         if (!user) {
             console.log("❌ User not found");
@@ -154,7 +157,7 @@ export const getMe = async (req, res) => {
                 message: 'User not found'
             });
         }
-        
+
 
         let avatarToSend = user.avatar;
         try {
@@ -162,7 +165,7 @@ export const getMe = async (req, res) => {
             if (resume && resume.avatar) {
                 avatarToSend = resume.avatar;
             }
-        } catch (e) {}
+        } catch (e) { }
 
         const userData = {
             ...user.toObject(),
@@ -184,32 +187,32 @@ export const getMe = async (req, res) => {
 };
 
 export const googleLogin = async (req, res) => {
-  try {
-    const { token } = req.body;
-    if (!token) return res.status(400).json({ success: false, msg: "Token missing" });
+    try {
+        const { token } = req.body;
+        if (!token) return res.status(400).json({ success: false, msg: "Token missing" });
 
-    const ticket = await client.verifyIdToken({
-      idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
 
-    const payload = ticket.getPayload();
-    const { email, name, picture } = payload;
+        const payload = ticket.getPayload();
+        const { email, name, picture } = payload;
 
-    let user = await User.findOne({ email });
+        let user = await User.findOne({ email });
 
-    if (!user) {
-      user = await User.create({
-        name,
-        email,
-        avatar: picture,
-        password: "GOOGLE_OAUTH", 
-      });
+        if (!user) {
+            user = await User.create({
+                name,
+                email,
+                avatar: picture,
+                password: "GOOGLE_OAUTH",
+            });
+        }
+
+        sendTokenResponse(user, res);
+    } catch (err) {
+        console.error("Google login error:", err);
+        res.status(500).json({ success: false, msg: "Google login failed" });
     }
-
-    sendTokenResponse(user, res);
-  } catch (err) {
-    console.error("Google login error:", err);
-    res.status(500).json({ success: false, msg: "Google login failed" });
-  }
 };

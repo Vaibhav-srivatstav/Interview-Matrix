@@ -17,17 +17,22 @@ api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('user');
+      const publicPages = ['/login', '/register', '/'];
+      if (!publicPages.includes(window.location.pathname)) {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(err);
   }
 );
 
-// // ── Auth ───────────────────────────────────────────────────────────────────
-// export const loginUser    = (data) => api.post('/auth/login', data);
-// export const registerUser = (data) => api.post('/auth/register', data);
-// export const getMe        = ()     => api.get('/auth/me');
+// ── Auth ───────────────────────────────────────────────────────────────────
+export const loginUser    = (data) => api.post('/auth/login', data);
+export const registerUser = (data) => api.post('/auth/register', data);
+export const getMe        = ()     => api.get('/auth/me');
+export const loginWithGoogle = (token) => api.post('/auth/google', { token });
 
 // // ── Profile ────────────────────────────────────────────────────────────────
 // export const getProfile    = ()     => api.get('/profile');

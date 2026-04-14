@@ -24,27 +24,28 @@ export const AuthProvider = ({ children }) => {
   /**
    * Check session on app load
    */
-  useEffect(() => {
-    const checkAuth = async () => {
 
-      try {
-        const res = await api.get('/api/auth/me');
-        setUser(res.data.user);
-        return res.data.user;
-      } catch (err) {
-        // Only treat 401 as "not logged in", not an error
-        localStorage.removeItem("isLoggedIn");
-        if (err.response?.status !== 401) {
-          console.error('Auth check failed:', err);
-        }
-        setUser(null);
-        return null;
-      } finally {
-        setLoading(false);
-        setInitialized(true);
+  const checkAuth = async () => {
+    try {
+      const res = await api.get('/api/auth/me');
+      setUser(res.data.user);
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+      return res.data.user
+    } catch (err) {
+      if (err.response?.status !== 401) {
+        console.error('Auth check failed:', err);
       }
-    };
-
+      setUser(null);
+      localStorage.removeItem("isLoggedIn");
+      localStorage.removeItem("user");
+      return null;
+    } finally {
+      setLoading(false);
+      setInitialized(true);
+    }
+  };
+  useEffect(() => {
     checkAuth();
   }, []);
 
@@ -60,7 +61,7 @@ export const AuthProvider = ({ children }) => {
 
       const user = await checkAuth();
 
-      if(!user) throw new Error("Auth sync failed");
+      if (!user) throw new Error("Auth sync failed");
 
       setUser(res.data.user);
       // return res.data;

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react"; // Added useEffect
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,82 +16,65 @@ import {
 import { Loader2, AlertCircle } from "lucide-react";
 import { GoogleLogin } from "@react-oauth/google";
 import { showProfessionalToast } from "../customToast";
+import { loginWithGoogle, loginUser } from '@/lib/api';
+import { useAuth } from "@/lib/authContext"; // Added Auth Hook
 
 export function LoginForm() {
   const router = useRouter();
+  const { setGoogleUser } = useAuth(); // Destructure the function here
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isClient, setIsClient] = useState(false);
 
-  // Email/Password login
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) return null;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     setIsLoading(true);
     setError("");
-
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-          credentials: "include",
-        }
-      );
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || "Login failed");
-      }
-
+      // Note: Ensure loginUser in api.js takes (email, password) or an object
+      await loginUser({ email, password }); 
       showProfessionalToast("Login successful!");
-
-      // 🔥 important: ensure state updates complete before navigation
-      setTimeout(() => {
-        router.push("/profile");
-      }, 0);
-
+      window.location.href = "/profile";
     } catch (err) {
       setError(err.message);
       showProfessionalToast(err.message || "Login failed");
     } finally {
-      setIsLoading(false); // ✅ CRITICAL FIX
+      setIsLoading(false); 
     }
   };
 
-  // Google Login
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/google`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token: credentialResponse.credential }),
-          credentials: "include",
-        }
-      );
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || "Google login failed");
+      console.log("Google response received, sending to backend...");
+      const res = await loginWithGoogle(credentialResponse.credential);
+      
+      // FIX: Ensure res.data.user exists before using it
+      const userData = res.data.user; 
+      
+      if (userData) {
+        // Sync everything
+        localStorage.setItem("isLoggedIn", "true");
+        localStorage.setItem("user", JSON.stringify(userData));
+        
+        // This function now exists because we got it from useAuth()
+        setGoogleUser(userData);
+        
+        showProfessionalToast("Logged in with Google!");
+        window.location.href = "/profile";
       }
-
-      showProfessionalToast("Logged in with Google!");
-
-      setTimeout(() => {
-        router.push("/profile");
-      }, 0);
-
     } catch (err) {
+      console.error("Google login error:", err);
       setError(err.message);
-      showProfessionalToast(err.message || "Google login failed");
+      showProfessionalToast("Google login failed");
     }
   };
 
