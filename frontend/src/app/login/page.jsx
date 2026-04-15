@@ -1,8 +1,4 @@
 'use client';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '/src/lib/authContext';
-import toast from 'react-hot-toast';
 import { LoginForm } from '@/components/auth/login_form.js'
 
 export default function LoginPage() {

@@ -35,23 +35,40 @@ export function LoginForm() {
 
   if (!isClient) return null;
 
-  const {login} = useAuth();
+  const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
     try {
-      // Note: Ensure loginUser in api.js takes (email, password) or an object
-      const userData = await login(email, password);  
-      showProfessionalToast("Login successful!");
-      // window.location.href = "/profile";
-      router.replace('/profile');
+
+      const userData = await login(email, password);
+      // showProfessionalToast("Login successful!");
+      // router.replace('/profile');
+      // if (userData.isAdmin === true) {
+      //   showProfessionalToast("Welcome to Admin Portal");
+      //   // window.location.href = "/admin";
+      //   router.replace('/admin');
+      // } else {
+      //   showProfessionalToast("Login successful!");
+      //   // window.location.href = "/profile"; 
+      //   router.replace('/profile');
+      // }
+      const checkAdmin = userData?.isAdmin === true || String(userData?.isAdmin) === "true";
+
+      if (checkAdmin) {
+            showProfessionalToast("Welcome, Admin!");
+            router.replace('/admin');
+        } else {
+            showProfessionalToast("Login successful!");
+            router.replace('/profile');
+        }
     } catch (err) {
       setError(err.message);
       showProfessionalToast(err.message || "Login failed");
     } finally {
-      setIsLoading(false); 
+      setIsLoading(false);
     }
   };
 
@@ -59,21 +76,30 @@ export function LoginForm() {
     try {
       console.log("Google response received, sending to backend...");
       const res = await loginWithGoogle(credentialResponse.credential);
-      
+
       // FIX: Ensure res.data.user exists before using it
-      const userData = res.data.user; 
-      
+      const userData = res.data.user;
+
       if (userData) {
         // Sync everything
         localStorage.setItem("isLoggedIn", "true");
         localStorage.setItem("user", JSON.stringify(userData));
-        
+
         // This function now exists because we got it from useAuth()
         setGoogleUser(userData);
-        
-        showProfessionalToast("Logged in with Google!");
+
+        // showProfessionalToast("Logged in with Google!");
         // window.location.href = "/profile";
+        // router.replace('/profile');
+        if (userData.isAdmin === true) {
+        showProfessionalToast("Welcome to Admin Portal Logged in with Google!");
+        // window.location.href = "/admin";
+        router.replace('/admin');
+      } else {
+        showProfessionalToast("Logged in with Google!");
+        // window.location.href = "/profile"; 
         router.replace('/profile');
+      }
       }
     } catch (err) {
       console.error("Google login error:", err);

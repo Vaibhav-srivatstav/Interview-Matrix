@@ -12,6 +12,7 @@ import interviewRoutes from './routes/interview.routes.js';
 import questionRoutes from './routes/questions.routes.js';
 import evaluationRoutes from './routes/evaluation.routes.js';
 import profileRoutes from './routes/profile.routes.js';
+import admin from './routes/admin.routes.js';
 import helmet from "helmet";
 
 
@@ -52,6 +53,7 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/interview', interviewRoutes);
 app.use('/api/questions', questionRoutes);
 app.use('/api/evaluation', evaluationRoutes);
+app.use('/api/admin', admin);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
 

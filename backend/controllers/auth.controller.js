@@ -39,6 +39,7 @@ const sendTokenResponse = async (user, res) => {
             id: user._id,
             name: user.name,
             email: user.email,
+            isAdmin: user.isAdmin,
             avatar: avatarToSend,
             skills: skillsToSend
         }
