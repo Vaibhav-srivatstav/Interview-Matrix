@@ -11,8 +11,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Pre-download spaCy model
-RUN python -m spacy download en_core_web_sm || true
+# RUN python -m spacy download en_core_web_sm || true
 
-COPY . .
+COPY app.py .
 EXPOSE 8000
 CMD ["gunicorn", "-w", "2", "-b", "0.0.0.0:8000", "--timeout", "120", "--preload", "app:app"]
