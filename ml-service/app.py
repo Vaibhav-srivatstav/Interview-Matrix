@@ -290,6 +290,10 @@ def confidence_score():
 def health():
     return jsonify({'status': 'ok', 'service': 'ml-service', 'nlp': 'tfidf'})
 
+@app.route("/")
+def index():
+    return "Hello, interview‑matrix‑ml!"
+
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8000))

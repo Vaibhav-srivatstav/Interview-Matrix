@@ -3,6 +3,8 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 // Import only what you need from your central api file
 import api, { getMe, logoutUser } from '@/lib/api';
+import { useRouter } from 'next/navigation';
+
 
 const AuthContext = createContext(null);
 
@@ -88,7 +90,9 @@ export const AuthProvider = ({ children }) => {
   /**
    * LOGOUT
    */
+   const router = useRouter();
   const logout = async () => {
+  
     try {
       await logoutUser(); // Use the helper from api.js
     } catch (err) {
@@ -98,7 +102,8 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('isLoggedIn');
       localStorage.removeItem('user');
       localStorage.clear();
-      window.location.replace('/login');
+      // window.location.replace('/login');
+      router.replace('/login');
     }
   };
 

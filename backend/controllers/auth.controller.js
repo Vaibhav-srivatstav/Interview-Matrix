@@ -91,7 +91,7 @@ export const login = async (req, res) => {
             return res.status(400).json({ message: "Please provide an email" });
         }
 
-        const normalizedEmail = email.toLowerCase();
+        const normalizedEmail = email.trim().toLowerCase();
 
         const user = await User.findOne({ email: normalizedEmail });
 

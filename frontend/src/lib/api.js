@@ -32,7 +32,7 @@ api.interceptors.response.use(
 );
 
 // ── Auth ───────────────────────────────────────────────────────────────────
-export const loginUser = (data) => { console.log("Sending to Backend:", data); api.post('/auth/login', data); }
+export const loginUser = (data) => { return api.post('/auth/login', data); }
 export const registerUser = (data) => api.post('/auth/register', data);
 export const getMe = () => api.get('/auth/me');
 export const loginWithGoogle = (token) => api.post('/auth/google', { token });

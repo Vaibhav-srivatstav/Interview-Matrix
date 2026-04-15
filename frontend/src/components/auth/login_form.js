@@ -16,7 +16,7 @@ import {
 import { Loader2, AlertCircle } from "lucide-react";
 import { GoogleLogin } from "@react-oauth/google";
 import { showProfessionalToast } from "../customToast";
-import { loginWithGoogle, loginUser } from '@/lib/api';
+import { loginWithGoogle } from '@/lib/api';
 import { useAuth } from "@/lib/authContext"; // Added Auth Hook
 
 export function LoginForm() {
@@ -35,15 +35,18 @@ export function LoginForm() {
 
   if (!isClient) return null;
 
+  const {login} = useAuth();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
     try {
       // Note: Ensure loginUser in api.js takes (email, password) or an object
-      await loginUser({ email, password }); 
+      const userData = await login(email, password);  
       showProfessionalToast("Login successful!");
-      window.location.href = "/profile";
+      // window.location.href = "/profile";
+      router.replace('/profile');
     } catch (err) {
       setError(err.message);
       showProfessionalToast(err.message || "Login failed");
@@ -69,7 +72,8 @@ export function LoginForm() {
         setGoogleUser(userData);
         
         showProfessionalToast("Logged in with Google!");
-        window.location.href = "/profile";
+        // window.location.href = "/profile";
+        router.replace('/profile');
       }
     } catch (err) {
       console.error("Google login error:", err);
