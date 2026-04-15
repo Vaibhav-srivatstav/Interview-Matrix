@@ -23,7 +23,7 @@ export default function AIInterviewer({ question }) {
   useEffect(() => {
     const index = Math.floor(Math.random() * INTERVIEWERS.length);
     setInterviewer(INTERVIEWERS[index]);
-    setAvatar(`/interviewer${index + 1}.png`);
+    setAvatar(`/Interviewer${index + 1}.png`);
   }, []);
 
   /* 2. Text-to-Speech & Animation Logic */
