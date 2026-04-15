@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { OAuth2Client } from "google-auth-library";
 import Resume from '../models/Resume.js';
+import isStrongPassword from '../utils/password.js';
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -50,6 +51,13 @@ const sendTokenResponse = async (user, res) => {
 export const register = async (req, res) => {
     try {
         const { name, email, password } = req.body;
+        if (!isStrongPassword(password)) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    'Password must contain at least one uppercase letter, one number, one symbol, and be at least 8 characters long',
+            });
+        }
         const normalizedEmail = email.toLowerCase();
         const existingUser = await User.findOne({ email: normalizedEmail });
         if (existingUser) {
