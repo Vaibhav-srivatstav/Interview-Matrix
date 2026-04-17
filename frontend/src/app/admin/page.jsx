@@ -9,7 +9,7 @@ import {
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-const COLORS = ['#6366f1','#22c55e','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#ec4899'];
+const COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#ec4899'];
 
 /* ---------------- STAT CARD ---------------- */
 function StatCard({ icon: Icon, label, value, color }) {
@@ -59,7 +59,30 @@ export default function AdminPage() {
 
   /* ---------------- STATES ---------------- */
   if (loading) return <div className="p-8 text-gray-500 dark:text-gray-400">Loading...</div>;
-  if (!stats)  return <div className="p-8 text-red-500">Failed to load stats</div>;
+  if (!stats) return <div className="p-8 text-red-500">Failed to load stats</div>;
+
+  const getLast7DaysData = () => {
+    const today = new Date();
+    const days = [];
+
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(today.getDate() - i);
+
+      const formatted = d.toISOString().slice(0, 10); // YYYY-MM-DD
+
+      const found = stats.dailySessions.find(s => s._id === formatted);
+
+      days.push({
+        _id: formatted,
+        count: found ? found.count : 0
+      });
+    }
+
+    return days;
+  };
+
+  const sessionData = getLast7DaysData();
 
   return (
     <div className="p-8 space-y-8 bg-white dark:bg-gray-950 min-h-screen transition-colors duration-300">
@@ -83,9 +106,9 @@ export default function AdminPage() {
 
       {/* STAT CARDS */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={Users}      label="Total users"    value={stats.totalUsers}    color="bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400" />
-        <StatCard icon={Brain}      label="Sessions"       value={stats.totalSessions} color="bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400" />
-        <StatCard icon={HelpCircle} label="Questions"      value={stats.totalQuestions} color="bg-yellow-100 text-yellow-600 dark:bg-yellow-900 dark:text-yellow-400" />
+        <StatCard icon={Users} label="Total users" value={stats.totalUsers} color="bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400" />
+        <StatCard icon={Brain} label="Sessions" value={stats.totalSessions} color="bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400" />
+        <StatCard icon={HelpCircle} label="Questions" value={stats.totalQuestions} color="bg-yellow-100 text-yellow-600 dark:bg-yellow-900 dark:text-yellow-400" />
         <StatCard icon={TrendingUp} label="Avg Confidence" value={`${stats.avgConfidence}%`} color="bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-400" />
       </div>
 
@@ -99,7 +122,7 @@ export default function AdminPage() {
           </h3>
 
           <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={stats.dailySessions}>
+            <BarChart data={sessionData}>
               <XAxis dataKey="_id" tick={{ fill: '#6b7280', fontSize: 11 }} />
               <YAxis tick={{ fill: '#6b7280', fontSize: 11 }} />
               <Tooltip
@@ -110,8 +133,8 @@ export default function AdminPage() {
                   color: theme === "dark" ? '#f9fafb' : '#111827'
                 }}
               />
-              <Line type="monotone" dataKey="count" stroke="#6366f1" strokeWidth={2} />
-            </LineChart>
+              <Bar dataKey="count" fill="#6366f1" radius={[6, 6, 0, 0]} />
+            </BarChart>
           </ResponsiveContainer>
         </div>
 
@@ -124,7 +147,7 @@ export default function AdminPage() {
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={stats.questionsByCategory.slice(0, 8)} layout="vertical">
               <XAxis type="number" tick={{ fill: '#6b7280', fontSize: 11 }} />
-              <YAxis dataKey="_id" type="category" tick={{ fill: '#6b7280', fontSize: 11 }} width={80} />
+              <YAxis dataKey="_id" type="category" width={120}  interval={0} tick={{ fill: '#6b7280', fontSize: 11 }} />
               <Tooltip
                 contentStyle={{
                   background: theme === "dark" ? '#111827' : '#ffffff',
