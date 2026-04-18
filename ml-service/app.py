@@ -1,13 +1,13 @@
 import os
 import base64
-import re
-import math
 import numpy as np
+import signal
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
 from pydub import AudioSegment
 import subprocess
+import cv2
 
 # ✅ Load env
 load_dotenv()
@@ -23,6 +23,36 @@ app = Flask(__name__)
 CORS(app)
 
 _emotion_analyzer = None
+
+from deepface import DeepFace
+
+print("🔥 Loading DeepFace model...")
+
+# Warmup (important)
+DeepFace.analyze(
+    np.zeros((224,224,3), dtype=np.uint8),
+    actions=['emotion'],
+    enforce_detection=False,
+    detector_backend='opencv',
+    silent=True
+)
+
+print("✅ Model loaded successfully")
+
+# ================= TIMEOUT HANDLER =================
+def timeout_handler(signum, frame):
+    raise TimeoutError("ML timeout")
+
+signal.signal(signal.SIGALRM, timeout_handler)
+
+# ================= HEALTH =================
+@app.route('/')
+def root():
+    return jsonify({"status": "ML running"})
+
+@app.route('/health')
+def health():
+    return jsonify({"status": "ok"})
 
 
 # ✅ Debug endpoint (VERY IMPORTANT)
@@ -57,32 +87,41 @@ def analyze_emotion():
     try:
         data = request.get_json()
         if not data or 'frame' not in data:
-            return jsonify({'error': 'No frame provided'}), 400
+            return jsonify(_neutral("No frame"))
 
         raw = data['frame']
+
+        # remove base64 header
         if ',' in raw:
             raw = raw.split(',', 1)[1]
 
+        # size protection (IMPORTANT)
+        if len(raw) > 50000:
+            return jsonify(_neutral("Frame too large"))
+
         img_bytes = base64.b64decode(raw)
         img_array = np.frombuffer(img_bytes, dtype=np.uint8)
-
-        import cv2
         img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
 
-        if img is None or img.size == 0:
-            return jsonify(_neutral())
+        if img is None:
+            return jsonify(_neutral("Invalid image"))
 
-        if img.shape[1] < 48 or img.shape[0] < 48:
-            img = cv2.resize(img, (224, 224))
+        # resize (performance boost)
+        img = cv2.resize(img, (160, 160))
 
-        DeepFace = get_emotion_analyzer()
-        result = DeepFace.analyze(
-            img,
-            actions=['emotion'],
-            enforce_detection=False,
-            detector_backend='opencv',
-            silent=True
-        )
+        # timeout safety
+        signal.alarm(10)
+
+        try:
+            result = DeepFace.analyze(
+                img,
+                actions=['emotion'],
+                enforce_detection=False,
+                detector_backend='opencv',
+                silent=True
+            )
+        finally:
+            signal.alarm(0)
 
         if isinstance(result, list):
             result = result[0]
@@ -91,7 +130,7 @@ def analyze_emotion():
         dominant = result.get('dominant_emotion', 'neutral')
 
         if sum(emotions.values()) < 1:
-            return jsonify(_neutral('No face detected'))
+            return jsonify(_neutral("No face"))
 
         confidence_map = {
             'happy': 90, 'neutral': 70, 'surprise': 65,
@@ -111,7 +150,7 @@ def analyze_emotion():
         })
 
     except Exception as e:
-        app.logger.error(f'Emotion error: {e}')
+        app.logger.error(f"Emotion error: {e}")
         return jsonify(_neutral(str(e)))
 
 
@@ -123,6 +162,15 @@ def _neutral(reason=''):
         'confidence_contribution': 65.0,
         'fallback': True,
         'reason': reason,
+    }
+
+def _neutral(reason=""):
+    return {
+        'dominant_emotion': 'neutral',
+        'emotions': {'neutral': 100.0},
+        'confidence_contribution': 65.0,
+        'fallback': True,
+        'reason': reason
     }
 
 
