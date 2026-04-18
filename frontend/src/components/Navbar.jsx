@@ -120,13 +120,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="
-        flex items-center border mx-4 max-md:w-full max-md:justify-between 
-        px-6 py-4 rounded-full text-sm justify-between transition
-
-        bg-white text-black border-gray-300
-        dark:bg-gray-950 dark:text-white dark:border-slate-700
-      ">
+      <nav className="flex items-center border mx-4 max-md:w-full max-md:justify-between px-6 py-4 rounded-full text-sm justify-between transition sticky top-0 z-10 backdrop-blur-md bg-white/55 text-black border-gray-300 dark:bg-gray-950/55 dark:text-white dark:border-slate-700">   
 
         {/* LEFT: Theme + Logo */}
         <div className="flex items-center gap-3">

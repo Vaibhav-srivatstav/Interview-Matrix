@@ -6,6 +6,8 @@ import numpy as np
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
+from pydub import AudioSegment
+AudioSegment.converter = "/usr/bin/ffmpeg"
 
 load_dotenv()
 app = Flask(__name__)
@@ -184,51 +186,97 @@ def analyze_voice():
         if not data or 'audio' not in data:
             return jsonify({'error': 'No audio data'}), 400
 
-        raw = data['audio']
-        if ',' in raw:
-            raw = raw.split(',', 1)[1]
+        audio_bytes = base64.b64decode(data['audio'])
 
-        audio_bytes = base64.b64decode(raw)
-        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp:
+        # ✅ Save as WEBM (not wav)
+        with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as tmp:
             tmp.write(audio_bytes)
             tmp_path = tmp.name
 
-        try:
-            audio_seg = AudioSegment.from_wav(tmp_path)
-        except Exception:
-            audio_seg = AudioSegment.from_file(tmp_path)
+        # ✅ Load audio (auto-detect format)
+        audio_seg = AudioSegment.from_file(tmp_path)
 
-        duration_s = max(len(audio_seg) / 1000.0, 0.1)
+        # ✅ Convert to WAV for speech recognition
+        wav_path = tmp_path + ".wav"
+        audio_seg.export(wav_path, format="wav")
+
+        duration_s = len(audio_seg) / 1000.0
+
+        # ✅ Speech Recognition
         recognizer = sr.Recognizer()
+        with sr.AudioFile(wav_path) as source:
+            audio_data = recognizer.record(source)
+
         transcript = ''
         try:
-            with sr.AudioFile(tmp_path) as source:
-                audio_data = recognizer.record(source)
             transcript = recognizer.recognize_google(audio_data)
-        except Exception:
-            pass
+        except:
+            transcript = ''
 
+        # Cleanup temp files
         os.unlink(tmp_path)
+        os.unlink(wav_path)
 
+        # Metrics
         words = transcript.split() if transcript else []
-        speech_rate = (len(words) / duration_s * 60) if duration_s > 0 else 0
-        fillers = ['um', 'uh', 'like', 'you know', 'basically', 'literally', 'actually']
-        filler_count = sum(1 for w in words if w.lower() in fillers)
-        clarity = max(30, 100 - min(30, abs(speech_rate - 130) / 5) - min(20, filler_count * 5))
+        word_count = len(words)
+        speech_rate = (word_count / duration_s * 60) if duration_s > 0 else 0
+
+        filler_words = ['um', 'uh', 'like', 'you know', 'basically', 'literally', 'actually']
+        filler_count = sum(1 for w in words if w.lower() in filler_words)
+
+        silence_thresh = audio_seg.dBFS - 14
+        pause_count = count_pauses(audio_seg, silence_thresh)
+
+        ideal_wpm = 130
+        rate_penalty = min(30, abs(speech_rate - ideal_wpm) / 5)
+        filler_penalty = min(20, filler_count * 5)
+        clarity = max(30, 100 - rate_penalty - filler_penalty)
 
         return jsonify({
             'transcript': transcript,
-            'word_count': len(words),
+            'word_count': word_count,
             'duration_seconds': round(duration_s, 1),
             'speech_rate': round(speech_rate, 1),
-            'pause_count': 0,
+            'pause_count': pause_count,
             'filler_words': filler_count,
             'clarity': round(clarity, 1),
         })
 
     except Exception as e:
-        app.logger.error(f'Voice error: {e}')
-        return jsonify({'transcript': '', 'speech_rate': 0, 'filler_words': 0, 'clarity': 60})
+        app.logger.error(f'Voice analysis error: {e}')
+        return jsonify({
+            'transcript': '',
+            'word_count': 0,
+            'speech_rate': 0,
+            'pause_count': 0,
+            'filler_words': 0,
+            'clarity': 60,
+            'error': str(e)
+        })
+
+
+
+def count_pauses(audio_seg, silence_thresh, min_silence_ms=500):
+    """Count pauses longer than min_silence_ms."""
+    chunk_size = 100
+    pauses = 0
+    in_silence = False
+    silence_dur = 0
+
+    for i in range(0, len(audio_seg), chunk_size):
+        chunk = audio_seg[i:i + chunk_size]
+        if chunk.dBFS < silence_thresh:
+            silence_dur += chunk_size
+            if not in_silence:
+                in_silence = True
+        else:
+            if in_silence and silence_dur >= min_silence_ms:
+                pauses += 1
+            in_silence = False
+            silence_dur = 0
+
+    return pauses
 
 
 @app.route('/confidence_score', methods=['POST'])
@@ -243,6 +291,12 @@ def confidence_score():
         return jsonify({'confidence_score': final, 'level': level})
     except Exception as e:
         return jsonify({'confidence_score': 65, 'level': 'Medium'})
+
+    
+@app.route("/", methods=["GET"])
+def root():
+    return jsonify({"msg": "ML Service is up", "service": "ml-service"})
+
 
 
 if __name__ == '__main__':

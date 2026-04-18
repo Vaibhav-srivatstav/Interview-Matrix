@@ -11,8 +11,7 @@ import toast from 'react-hot-toast';
 
 import {
   LineChart, Line, XAxis, YAxis, Tooltip,
-  ResponsiveContainer, AreaChart, Area,
-  BarChart
+  ResponsiveContainer, AreaChart, Area
 } from 'recharts';
 import FullPageLoader from '@/components/FullPageLoader';
 
@@ -143,24 +142,24 @@ export default function DashboardPage() {
 
           {/* Line Chart */}
           <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border dark:border-gray-800">
-            <h2 className="font-semibold mb-4">Performance Trend</h2>
+            <h2 className="font-semibold mb-4">Performance</h2>
 
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
+                <LineChart data={chartData}>
                   <XAxis dataKey="name" />
                   <YAxis />
                   <Tooltip />
                   <Line type="monotone" dataKey="confidence" strokeWidth={3} />
                   <Line type="monotone" dataKey="performance" strokeWidth={3} />
-                </BarChart>
+                </LineChart>
               </ResponsiveContainer>
             </div>
           </div>
 
           {/* Area Chart */}
           <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border dark:border-gray-800">
-            <h2 className="font-semibold mb-4">Confidence Growth</h2>
+            <h2 className="font-semibold mb-4">Confidence Growth Trend</h2>
 
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">

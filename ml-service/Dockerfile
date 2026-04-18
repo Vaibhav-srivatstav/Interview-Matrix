@@ -2,9 +2,15 @@ FROM python:3.11-slim
 
 # System deps for OpenCV + audio
 RUN apt-get update && apt-get install -y \
-    libglib2.0-0 libsm6 libxext6 libxrender-dev \
-    ffmpeg libavcodec-extra \
+    ffmpeg \
+    libgl1 \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
     && rm -rf /var/lib/apt/lists/*
+
+ENV PATH="/usr/bin:${PATH}"
 
 WORKDIR /app
 COPY requirements.txt .
