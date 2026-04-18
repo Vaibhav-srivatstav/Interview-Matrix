@@ -131,7 +131,10 @@ def _neutral(reason=''):
 def analyze_voice():
     try:
         import speech_recognition as sr
+        from pydub import AudioSegment
         import tempfile
+
+        app.logger.info("Step 1: Request received")
 
         data = request.get_json()
         if not data or 'audio' not in data:
@@ -139,47 +142,47 @@ def analyze_voice():
 
         audio_bytes = base64.b64decode(data['audio'])
 
-        # Save input
+        if len(audio_bytes) < 1000:
+            return jsonify({'error': 'Audio too short'}), 400
+
+        app.logger.info("Step 2: Saving temp file")
+
+        # Save as webm
         with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as tmp:
             tmp.write(audio_bytes)
-            input_path = tmp.name
+            tmp_path = tmp.name
 
-        # Load via pydub (FFmpeg)
-        try:
-            audio_seg = AudioSegment.from_file(input_path)
-        except Exception as e:
-            return jsonify({
-                "error": f"FFmpeg failed: {str(e)}",
-                "clarity": 60
-            })
+        app.logger.info("Step 3: Loading audio")
 
-        # Convert to WAV
-        wav_path = input_path + ".wav"
+        audio_seg = AudioSegment.from_file(tmp_path)
+
+        # 🔥 IMPORTANT: normalize audio (fixes many 502 issues)
+        audio_seg = audio_seg.set_channels(1).set_frame_rate(16000)
+
+        wav_path = tmp_path + ".wav"
         audio_seg.export(wav_path, format="wav")
 
         duration_s = len(audio_seg) / 1000.0
 
-        recognizer = sr.Recognizer()
+        app.logger.info("Step 4: Speech recognition start")
 
+        recognizer = sr.Recognizer()
         with sr.AudioFile(wav_path) as source:
             audio_data = recognizer.record(source)
 
         transcript = ''
         try:
             transcript = recognizer.recognize_google(audio_data)
-        except sr.UnknownValueError:
-            transcript = ''
-        except sr.RequestError as e:
-            return jsonify({
-                "error": f"Google API error: {str(e)}",
-                "clarity": 60
-            })
+        except Exception as e:
+            app.logger.error(f"Speech error: {e}")
+            transcript = ""
 
-        # Cleanup
-        os.unlink(input_path)
+        # cleanup
+        os.unlink(tmp_path)
         os.unlink(wav_path)
 
-        # Metrics
+        app.logger.info("Step 5: Processing metrics")
+
         words = transcript.split() if transcript else []
         word_count = len(words)
         speech_rate = (word_count / duration_s * 60) if duration_s > 0 else 0
@@ -193,7 +196,6 @@ def analyze_voice():
         ideal_wpm = 130
         rate_penalty = min(30, abs(speech_rate - ideal_wpm) / 5)
         filler_penalty = min(20, filler_count * 5)
-
         clarity = max(30, 100 - rate_penalty - filler_penalty)
 
         return jsonify({
