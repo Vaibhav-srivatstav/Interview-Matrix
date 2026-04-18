@@ -10,7 +10,7 @@ export const postemotion = async (req, res) => {
     const mlResponse = await axios.post(
       `${process.env.ML_SERVICE_URL}/analyze_emotion`,
       { frame: frameBase64 },
-      { timeout: 3000 }
+      { timeout: 15000 }
     );
 
     const emotionData = mlResponse.data;
@@ -40,7 +40,7 @@ export const postvoice = async (req, res) => {
     const mlResponse = await axios.post(
       `${process.env.ML_SERVICE_URL}/analyze_voice`,
       { audio: audioBase64 },
-      { timeout: 10000 }
+      { timeout: 15000 }
     );
 
     res.json(mlResponse.data);
