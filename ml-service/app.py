@@ -264,6 +264,10 @@ def root():
     return jsonify({"msg": "ML Service is up", "service": "ml-service"})
 
 
+@app.route('/ping')
+def ping():
+    return "pong" 
+
 # ================= RUN =================
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8000))
