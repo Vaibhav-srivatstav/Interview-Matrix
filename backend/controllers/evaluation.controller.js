@@ -59,9 +59,10 @@ export const postemotion = async (req, res) => {
     res.json(emotionData);
 
   } catch (err) {
-    console.error("EMOTION FALLBACK:", err.message);
+    console.error("🔥 EMOTION ERROR:", err.message);
+    console.error(err);
 
-    res.json({
+    res.status(500).json({
       dominant_emotion: 'neutral',
       emotions: { neutral: 1.0 },
       confidence_contribution: 65,
