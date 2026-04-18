@@ -1,29 +1,66 @@
 import Session from '../models/Session.js';
 import axios from 'axios';
 
+
+/* 🔥 Reusable ML caller with retry + logging */
+const callML = async (url, data, timeout = 30000) => {
+  try {
+    console.log("➡️ Calling ML:", url);
+
+    const res = await axios.post(url, data, { timeout });
+
+    console.log("✅ ML success:", url);
+    return res;
+
+  } catch (err) {
+    console.error("❌ ML error (1st try):", err.message);
+
+    // retry once (important for Render cold start)
+    try {
+      console.log("🔁 Retrying ML:", url);
+
+      const res = await axios.post(url, data, { timeout });
+
+      console.log("✅ ML success (retry):", url);
+      return res;
+
+    } catch (err2) {
+      console.error("❌ ML failed again:", err2.message);
+      throw err2;
+    }
+  }
+};
+
+
+/* ================= EMOTION ================= */
+
 export const postemotion = async (req, res) => {
   try {
     const { frameBase64, sessionId } = req.body;
-    if (!frameBase64) return res.status(400).json({ message: 'No frame data' });
 
-    // Forward to Flask ML service
-    const mlResponse = await axios.post(
+    if (!frameBase64) {
+      return res.status(400).json({ message: 'No frame data' });
+    }
+
+    const mlResponse = await callML(
       `${process.env.ML_SERVICE_URL}/analyze_emotion`,
       { frame: frameBase64 },
-      { timeout: 15000 }
+      20000
     );
 
     const emotionData = mlResponse.data;
 
-    // Broadcast via socket.io if sessionId provided
+    // socket emit
     if (sessionId) {
       const io = req.app.get('io');
       io.to(sessionId).emit('emotion_update', emotionData);
     }
 
     res.json(emotionData);
+
   } catch (err) {
-    // Graceful fallback — don't break the interview
+    console.error("EMOTION FALLBACK:", err.message);
+
     res.json({
       dominant_emotion: 'neutral',
       emotions: { neutral: 1.0 },
@@ -33,18 +70,30 @@ export const postemotion = async (req, res) => {
   }
 };
 
+
+/* ================= VOICE ================= */
+
 export const postvoice = async (req, res) => {
   try {
-    const { audioBase64, sessionId } = req.body;
+    const { audioBase64 } = req.body;
 
-    const mlResponse = await axios.post(
+    if (!audioBase64) {
+      return res.status(400).json({ message: 'No audio data' });
+    }
+
+    console.log("🎤 Audio size:", audioBase64.length);
+
+    const mlResponse = await callML(
       `${process.env.ML_SERVICE_URL}/analyze_voice`,
       { audio: audioBase64 },
-      { timeout: 15000 }
+      30000   // 🔥 IMPORTANT (voice is slow)
     );
 
     res.json(mlResponse.data);
+
   } catch (err) {
+    console.error("VOICE FALLBACK:", err.message);
+
     res.json({
       transcript: '',
       speech_rate: 130,
