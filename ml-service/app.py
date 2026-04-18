@@ -45,14 +45,6 @@ def timeout_handler(signum, frame):
 
 signal.signal(signal.SIGALRM, timeout_handler)
 
-# ================= HEALTH =================
-@app.route('/')
-def root():
-    return jsonify({"status": "ML running"})
-
-@app.route('/health')
-def health():
-    return jsonify({"status": "ok"})
 
 
 # ✅ Debug endpoint (VERY IMPORTANT)
