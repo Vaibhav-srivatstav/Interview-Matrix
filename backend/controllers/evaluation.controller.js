@@ -34,39 +34,30 @@ const callML = async (url, data, timeout = 30000) => {
 
 /* ================= EMOTION ================= */
 
-export const postemotion = async (req, res) => {
+export const postemotion =  async (req, res) => {
   try {
     const { frameBase64, sessionId } = req.body;
+    if (!frameBase64) return res.status(400).json({ message: 'No frame data' });
 
-    if (!frameBase64) {
-      return res.status(400).json({ message: 'No frame data' });
-    }
-
-    const mlResponse = await callML(
+    const mlResponse = await axios.post(
       `${process.env.ML_SERVICE_URL}/analyze_emotion`,
       { frame: frameBase64 },
-      20000
+      { timeout: 8000 }
     );
 
     const emotionData = mlResponse.data;
-
-    // socket emit
-    if (sessionId) {
-      const io = req.app.get('io');
-      io.to(sessionId).emit('emotion_update', emotionData);
-    }
-
+    if (sessionId) req.app.get('io').to(sessionId).emit('emotion_update', emotionData);
     res.json(emotionData);
 
   } catch (err) {
-    console.error("🔥 EMOTION ERROR:", err.message);
-    console.error(err);
-
-    res.status(500).json({
+    // Log but never return 500 — return fallback so interview continues
+    console.error('[Emotion] ML error:', err.message);
+    res.json({
       dominant_emotion: 'neutral',
-      emotions: { neutral: 1.0 },
+      emotions: { neutral: 100, happy: 0, sad: 0, angry: 0, fear: 0, surprise: 0, disgust: 0 },
       confidence_contribution: 65,
-      error: 'ML service unavailable',
+      fallback: true,
+      reason: err.message,
     });
   }
 };
