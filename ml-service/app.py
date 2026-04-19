@@ -1,13 +1,13 @@
 import os
 import base64
+import re
+import math
 import numpy as np
-import signal
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
 from pydub import AudioSegment
 import subprocess
-import cv2
 
 # ✅ Load env
 load_dotenv()
@@ -23,28 +23,6 @@ app = Flask(__name__)
 CORS(app)
 
 _emotion_analyzer = None
-
-from deepface import DeepFace
-
-print("🔥 Loading DeepFace model...")
-
-# Warmup (important)
-DeepFace.analyze(
-    np.zeros((224,224,3), dtype=np.uint8),
-    actions=['emotion'],
-    enforce_detection=False,
-    detector_backend='opencv',
-    silent=True
-)
-
-print("✅ Model loaded successfully")
-
-# ================= TIMEOUT HANDLER =================
-def timeout_handler(signum, frame):
-    raise TimeoutError("ML timeout")
-
-signal.signal(signal.SIGALRM, timeout_handler)
-
 
 
 # ✅ Debug endpoint (VERY IMPORTANT)
@@ -79,41 +57,32 @@ def analyze_emotion():
     try:
         data = request.get_json()
         if not data or 'frame' not in data:
-            return jsonify(_neutral("No frame"))
+            return jsonify({'error': 'No frame provided'}), 400
 
         raw = data['frame']
-
-        # remove base64 header
         if ',' in raw:
             raw = raw.split(',', 1)[1]
 
-        # size protection (IMPORTANT)
-        if len(raw) > 50000:
-            return jsonify(_neutral("Frame too large"))
-
         img_bytes = base64.b64decode(raw)
         img_array = np.frombuffer(img_bytes, dtype=np.uint8)
+
+        import cv2
         img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
 
-        if img is None:
-            return jsonify(_neutral("Invalid image"))
+        if img is None or img.size == 0:
+            return jsonify(_neutral())
 
-        # resize (performance boost)
-        img = cv2.resize(img, (160, 160))
+        if img.shape[1] < 48 or img.shape[0] < 48:
+            img = cv2.resize(img, (224, 224))
 
-        # timeout safety
-        signal.alarm(10)
-
-        try:
-            result = DeepFace.analyze(
-                img,
-                actions=['emotion'],
-                enforce_detection=False,
-                detector_backend='opencv',
-                silent=True
-            )
-        finally:
-            signal.alarm(0)
+        DeepFace = get_emotion_analyzer()
+        result = DeepFace.analyze(
+            img,
+            actions=['emotion'],
+            enforce_detection=False,
+            detector_backend='opencv',
+            silent=True
+        )
 
         if isinstance(result, list):
             result = result[0]
@@ -122,7 +91,7 @@ def analyze_emotion():
         dominant = result.get('dominant_emotion', 'neutral')
 
         if sum(emotions.values()) < 1:
-            return jsonify(_neutral("No face"))
+            return jsonify(_neutral('No face detected'))
 
         confidence_map = {
             'happy': 90, 'neutral': 70, 'surprise': 65,
@@ -142,7 +111,7 @@ def analyze_emotion():
         })
 
     except Exception as e:
-        app.logger.error(f"Emotion error: {e}")
+        app.logger.error(f'Emotion error: {e}')
         return jsonify(_neutral(str(e)))
 
 
@@ -154,15 +123,6 @@ def _neutral(reason=''):
         'confidence_contribution': 65.0,
         'fallback': True,
         'reason': reason,
-    }
-
-def _neutral(reason=""):
-    return {
-        'dominant_emotion': 'neutral',
-        'emotions': {'neutral': 100.0},
-        'confidence_contribution': 65.0,
-        'fallback': True,
-        'reason': reason
     }
 
 
@@ -182,6 +142,7 @@ def analyze_voice():
 
         audio_bytes = base64.b64decode(data['audio'])
 
+        # Save input
         if len(audio_bytes) < 1000:
             return jsonify({'error': 'Audio too short'}), 400
 
@@ -190,8 +151,7 @@ def analyze_voice():
         # Save as webm
         with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as tmp:
             tmp.write(audio_bytes)
-            tmp_path = tmp.name
-
+            tmp_path = tmp.name  
         app.logger.info("Step 3: Loading audio")
 
         audio_seg = AudioSegment.from_file(tmp_path)
@@ -221,25 +181,25 @@ def analyze_voice():
         os.unlink(tmp_path)
         os.unlink(wav_path)
 
+        # Metrics
         app.logger.info("Step 5: Processing metrics")
 
         words = transcript.split() if transcript else []
         word_count = len(words)
         speech_rate = (word_count / duration_s * 60) if duration_s > 0 else 0
-
         filler_words = ['um', 'uh', 'like', 'you know', 'basically', 'literally', 'actually']
         filler_count = sum(1 for w in words if w.lower() in filler_words)
 
         silence_thresh = audio_seg.dBFS - 14
         pause_count = count_pauses(audio_seg, silence_thresh)
-
         ideal_wpm = 130
         rate_penalty = min(30, abs(speech_rate - ideal_wpm) / 5)
         filler_penalty = min(20, filler_count * 5)
+
         clarity = max(30, 100 - rate_penalty - filler_penalty)
 
         return jsonify({
-            'transcript': transcript,
+                        'transcript': transcript,
             'word_count': word_count,
             'duration_seconds': round(duration_s, 1),
             'speech_rate': round(speech_rate, 1),
@@ -313,4 +273,4 @@ def ping():
 # ================= RUN =================
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    app.run(host='0.0.0.0', port=port, debug=True)
