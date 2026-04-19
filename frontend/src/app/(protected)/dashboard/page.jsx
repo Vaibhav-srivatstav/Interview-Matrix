@@ -11,8 +11,11 @@ import toast from 'react-hot-toast';
 
 import {
   LineChart, Line, XAxis, YAxis, Tooltip,
-  ResponsiveContainer, AreaChart, Area
+  ResponsiveContainer, AreaChart, Area, CartesianGrid,
+  BarChart,
+  Bar
 } from 'recharts';
+
 import FullPageLoader from '@/components/FullPageLoader';
 
 /* ---------------- Score Badge ---------------- */
@@ -21,10 +24,14 @@ function ScoreBadge({ score }) {
     score >= 75
       ? 'bg-green-500/20 text-green-400'
       : score >= 50
-      ? 'bg-yellow-500/20 text-yellow-400'
-      : 'bg-red-500/20 text-red-400';
+        ? 'bg-yellow-500/20 text-yellow-400'
+        : 'bg-red-500/20 text-red-400';
 
-  return <span className={`px-2 py-1 rounded-lg text-xs ${color}`}>{score}%</span>;
+  return (
+    <span className={`px-2 py-1 rounded-lg text-xs ${color}`}>
+      {score}%
+    </span>
+  );
 }
 
 /* ---------------- KPI Card ---------------- */
@@ -75,10 +82,11 @@ export default function DashboardPage() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  /* ---------------- FETCH DATA ---------------- */
   useEffect(() => {
-    if (!loading && !user) {
+    if (!user) {
       router.push('/login');
-      return; 
+      return;
     }
 
     getSessions()
@@ -87,29 +95,51 @@ export default function DashboardPage() {
       .finally(() => setLoading(false));
   }, [user]);
 
+  /* ---------------- DATA PROCESSING ---------------- */
   const completed = sessions.filter((s) => s.status === 'completed');
 
   const avgConfidence = completed.length
-    ? Math.round(completed.reduce((s, c) => s + (c.overallConfidenceScore || 0), 0) / completed.length)
+    ? Math.round(
+      completed.reduce((s, c) => s + (c.overallConfidenceScore || 0), 0) /
+      completed.length
+    )
     : 0;
 
   const avgPerformance = completed.length
-    ? Math.round(completed.reduce((s, c) => s + (c.overallPerformanceScore || 0), 0) / completed.length)
+    ? Math.round(
+      completed.reduce((s, c) => s + (c.overallPerformanceScore || 0), 0) /
+      completed.length
+    )
     : 0;
 
-  const chartData = completed.map((s, i) => ({
-    name: `#${i + 1}`,
-    confidence: s.overallConfidenceScore || 0,
-    performance: s.overallPerformanceScore || 0,
-  }));
+  /* ---------------- FIXED CHART DATA ---------------- */
+  let lastConfidence = null;
 
+  const chartData = completed.map((s, i) => {
+    let confidence = s.overallConfidenceScore;
+
+    // 🔥 Fix: avoid 0 spike
+    if (confidence == null) {
+      confidence = lastConfidence ?? 50; // fallback baseline
+    } else {
+      lastConfidence = confidence;
+    }
+
+    return {
+      name: `S${i + 1}`, // better than #1
+      confidence,
+      performance: s.overallPerformanceScore ?? 50,
+    };
+  });
+
+  /* ---------------- UI ---------------- */
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-100 dark:from-gray-950 dark:to-black transition">
 
       <main className="max-w-7xl mx-auto px-6 py-10">
 
         {/* HEADER */}
-        <div className="flex items-center justify-between mb-10 sticky top-0 z-10 backdrop-blur bg-white/60 dark:bg-black/40 py-4">
+        <div className="flex items-center justify-between mb-10 top-0 z-10 backdrop-blur bg-white/60 dark:bg-black/40 py-4">
           <h1 className="text-3xl font-bold">Dashboard</h1>
 
           <div className="flex gap-3">
@@ -140,42 +170,63 @@ export default function DashboardPage() {
         {/* ANALYTICS */}
         <div className="grid md:grid-cols-2 gap-6 mb-10">
 
-          {/* Line Chart */}
-          <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border dark:border-gray-800">
-            <h2 className="font-semibold mb-4">Performance</h2>
+          {/* ✅ PERFORMANCE (GREEN BAR) */}
+          <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border dark:border-gray-800 shadow-sm">
+            <h2 className="font-semibold mb-4 text-gray-800 dark:text-gray-200">
+              Performance by Session
+            </h2>
 
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
-                  <XAxis dataKey="name" />
-                  <YAxis />
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+
+                  <XAxis dataKey="name" tick={{ fill: '#9ca3af', fontSize: 12 }} />
+                  <YAxis domain={[0, 100]} tick={{ fill: '#9ca3af' }} />
+
                   <Tooltip />
-                  <Line type="monotone" dataKey="confidence" strokeWidth={3} />
-                  <Line type="monotone" dataKey="performance" strokeWidth={3} />
-                </LineChart>
+
+                  <Bar
+                    dataKey="performance"
+                    fill="#22c55e"
+                    radius={[8, 8, 0, 0]}
+                  />
+                </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          {/* Area Chart */}
-          <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border dark:border-gray-800">
-            <h2 className="font-semibold mb-4">Confidence Growth Trend</h2>
+
+          {/* ✅ CONFIDENCE (BLUE BAR) */}
+          <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border dark:border-gray-800 shadow-sm">
+            <h2 className="font-semibold mb-4 text-gray-800 dark:text-gray-200">
+              Confidence by Session
+            </h2>
 
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData}>
-                  <XAxis dataKey="name" />
-                  <YAxis />
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+
+                  <XAxis dataKey="name" tick={{ fill: '#9ca3af', fontSize: 12 }} />
+                  <YAxis domain={[0, 100]} tick={{ fill: '#9ca3af' }} />
+
                   <Tooltip />
-                  <Area type="monotone" dataKey="confidence" />
-                </AreaChart>
+
+                  <Bar
+                    dataKey="confidence"
+                    fill="#3b82f6"
+                    radius={[8, 8, 0, 0]}
+                  />
+                </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
 
         </div>
 
-        {/* PROGRESS INSIGHTS */}
+
+        {/* INSIGHTS */}
         <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 border dark:border-gray-800 mb-10">
           <h2 className="font-semibold mb-4">Insights</h2>
 
@@ -190,7 +241,7 @@ export default function DashboardPage() {
           <h2 className="font-semibold mb-4">Interview History</h2>
 
           {loading ? (
-            <FullPageLoader/>
+            <FullPageLoader />
           ) : sessions.length === 0 ? (
             <div className="text-center py-10">
               <p className="text-gray-500 mb-4">No interviews yet</p>

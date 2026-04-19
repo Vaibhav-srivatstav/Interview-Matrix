@@ -5,6 +5,7 @@ import { getSessionReport } from '/src/lib/api';
 import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, Tooltip, Cell, LineChart, Line,
+  CartesianGrid,
 } from 'recharts';
 import { Brain, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -174,12 +175,20 @@ export default function ResultsPage() {
           <div className="card mb-6">
             <h3 className="mb-4 text-sm font-semibold">Score per Question</h3>
             <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={perQData}>
-                <XAxis dataKey="name" />
-                <YAxis domain={[0, 100]} />
+              <BarChart data={perQData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+
+                <XAxis dataKey="name" tick={{ fill: '#9ca3af', fontSize: 12 }} />
+                <YAxis domain={[0, 100]} tick={{ fill: '#9ca3af' }} />
+
                 <Tooltip />
-                <Line dataKey="score" stroke="#6366f1" strokeWidth={2} />
-              </LineChart>
+
+                <Bar
+                  dataKey="score"
+                  fill="#6366f1"
+                  radius={[8, 8, 0, 0]}
+                />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         )}

@@ -6,8 +6,12 @@ import { useAuth } from '@/lib/authContext';
 import Link from 'next/link';
 import {
   LayoutDashboard, HelpCircle, Users, BarChart3,
-  LogOut, Shield, ChevronRight
+  LogOut, Shield, ChevronRight,
+  Sun,
+  Moon
 } from 'lucide-react';
+import Image from 'next/image';
+import logo from '../../../../public/Interview.png'
 
 const NAV = [
   { href: '/admin',           label: 'Overview',  icon: LayoutDashboard },
@@ -65,7 +69,7 @@ export default function AdminLayout({ children }) {
           <div className="flex items-center justify-between">
 
             <div className="flex items-center gap-2">
-              <Shield size={20} className="text-blue-600 dark:text-brand-500" />
+              <Image src={logo} width={48} height={30} />
               <span className="font-bold text-black dark:text-white text-sm">
                 Admin Panel
               </span>
@@ -76,7 +80,7 @@ export default function AdminLayout({ children }) {
               onClick={toggleTheme}
               className="text-xs px-2 py-1 rounded bg-gray-200 dark:bg-gray-800 text-black dark:text-white"
             >
-              {theme === "dark" ? "☀️" : "🌙"}
+              {theme === "dark" ?<Sun size={16} /> : <Moon size={16} />}
             </button>
           </div>
 
