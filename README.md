@@ -196,6 +196,8 @@ The resume parser scans text for keywords and assigns categories:
 
 ## 📦 Dependencies Summary
 
+
+
 ### Backend
 - `express` — HTTP server
 - `mongoose` — MongoDB ODM
