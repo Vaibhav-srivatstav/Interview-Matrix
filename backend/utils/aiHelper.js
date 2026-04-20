@@ -5,65 +5,10 @@ import Question from "../models/Question.js";
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 // Using 1.5 Flash for speed/cost, or 1.5 Pro for complex reasoning
 const model = genAI.getGenerativeModel({ 
-  model: "gemini-1.5-flash",
+  model: "gemini-1.5-pro-latest",
   generationConfig: { responseMimeType: "application/json" } // Force JSON output
 });
 
-/**
- * Generate interview questions using Gemini
- */
-// export async function generateQuestionsWithAI(techStack, difficulty, count, resumeText = "") {
-//   try {
-//     const stackStr = techStack.join(", ");
-//     const resumeContext = resumeText
-//       ? `Candidate resume context: ${resumeText.substring(0, 800)}`
-//       : "";
-
-//     const prompt = `You are an expert technical interviewer. Generate ${count} unique interview questions for a candidate with skills in: ${stackStr}. Difficulty: ${difficulty}.
-// ${resumeContext}
-
-// Return ONLY a valid JSON array with this structure:
-// [
-//   {
-//     "text": "Question text here",
-//     "category": "one of: frontend, backend, fullstack, mern, html, css, javascript, react, nodejs, mongodb, python, behavioral",
-//     "difficulty": "${difficulty}",
-//     "expectedKeywords": ["keyword1", "keyword2"],
-//     "sampleAnswer": "Brief ideal answer"
-//   }
-// ]`;
-
-//     const result = await model.generateContent(prompt);
-//     const response = await result.response;
-//     const text = response.text();
-
-//     let questionsData = [];
-//     try {
-//       // Gemini with responseMimeType: "application/json" usually returns clean JSON
-//       questionsData = JSON.parse(text);
-//     } catch {
-//       console.warn("JSON parse failed, attempting cleanup");
-//       const cleaned = text.replace(/```json|```/g, "").trim();
-//       questionsData = JSON.parse(cleaned);
-//     }
-
-//     // Save AI-generated questions to DB
-//     const saved = await Promise.all(
-//       questionsData.map((q) =>
-//         Question.create({ ...q, isAIGenerated: true }).catch(() => q)
-//       )
-//     );
-
-//     return saved;
-//   } catch (err) {
-//     console.error("Gemini question generation failed:", err.message);
-//     return getFallbackQuestions(techStack, count);
-//   }
-// }
-
-/**
- * Generate final interview feedback using Gemini
- */
 export async function generateFinalFeedback(session) {
   try {
     const summary = session.answers.map((a, i) => ({

@@ -42,7 +42,7 @@ export const postemotion =  async (req, res) => {
     const mlResponse = await axios.post(
       `${process.env.ML_SERVICE_URL}/analyze_emotion`,
       { frame: frameBase64 },
-      { timeout: 8000 }
+      { timeout: 30000 }
     );
 
     const emotionData = mlResponse.data;
