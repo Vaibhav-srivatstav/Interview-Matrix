@@ -147,7 +147,7 @@ export const getAnswer =async (req, res) => {
   }
 };
 
-export const sessioncomplete =async (req, res) => {
+export const sessioncomplete = async (req, res) => {
   try {
     const session = await Session.findOne({
       _id: req.params.sessionId,
@@ -155,49 +155,44 @@ export const sessioncomplete =async (req, res) => {
     });
     if (!session) return res.status(404).json({ message: 'Session not found' });
 
+    // 1. Mark as completed
     session.status = 'completed';
     session.completedAt = new Date();
     session.duration = Math.round((session.completedAt - session.startedAt) / 1000);
 
+    // 2. Calculate Final Scores (Crucial for Graphs)
     const totalAnswers = session.answers.length;
     if (totalAnswers > 0) {
+      // Average Performance
       session.overallPerformanceScore = Math.round(
-        session.answers.reduce((s, a) => s + a.overallScore, 0) / totalAnswers
+        session.answers.reduce((s, a) => s + (a.overallScore || 0), 0) / totalAnswers
       );
-      // Ensure your Session model has the calculateConfidence method defined
-      if (typeof session.calculateConfidence === 'function') {
-        session.overallConfidenceScore = session.calculateConfidence();
-      } else {
-        session.overallConfidenceScore = Math.round(
-            session.answers.reduce((s, a) => s + a.emotionSummary.avgConfidence, 0) / totalAnswers
-        );
-      }
+      
+      // Average Confidence
+      session.overallConfidenceScore = Math.round(
+        session.answers.reduce((s, a) => s + (a.emotionSummary?.avgConfidence || 0), 0) / totalAnswers
+      );
     }
 
-    // Final AI Feedback using the imported helper
+    // 3. Generate AI Feedback (Now it uses the REAL scores calculated above)
     try {
+      // Pass the updated session object
       session.aiFinalFeedback = await generateFinalFeedback(session);
     } catch (e) {
-      console.error("Feedback error:", e.message);
-      session.aiFinalFeedback = 'Interview completed successfully. Great effort!';
+      console.error("AI Feedback Error:", e.message);
+      session.aiFinalFeedback = "Interview completed. Great effort on your technical session!";
     }
 
+    // 4. SAVE EVERYTHING TO DB
     await session.save();
 
     res.json({
       message: 'Interview completed',
-      results: {
-        sessionId: session._id,
-        overallConfidenceScore: session.overallConfidenceScore,
-        overallPerformanceScore: session.overallPerformanceScore,
-        duration: session.duration,
-        totalQuestions: totalAnswers,
-        aiFinalFeedback: session.aiFinalFeedback,
-      },
+      results: session // Send the saved session back
     });
   } catch (err) {
     console.error('Completion error:', err);
-    res.status(500).json({ message: 'Failed to complete session' });
+    res.status(500).json({ message: 'Failed to save results' });
   }
 };
 

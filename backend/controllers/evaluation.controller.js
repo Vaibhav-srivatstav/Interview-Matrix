@@ -34,7 +34,7 @@ const callML = async (url, data, timeout = 30000) => {
 
 /* ================= EMOTION ================= */
 
-export const postemotion =  async (req, res) => {
+export const postemotion = async (req, res) => {
   try {
     const { frameBase64, sessionId } = req.body;
     if (!frameBase64) return res.status(400).json({ message: 'No frame data' });
@@ -73,7 +73,6 @@ export const postvoice = async (req, res) => {
       return res.status(400).json({ message: 'No audio data' });
     }
 
-    console.log("🎤 Audio size:", audioBase64.length);
 
     const mlResponse = await callML(
       `${process.env.ML_SERVICE_URL}/analyze_voice`,
@@ -121,16 +120,9 @@ function buildConfidenceReport(session) {
     emotionBreakdown[e] = (emotionBreakdown[e] || 0) + 1;
   });
 
-  const avgNlp = answers.length
-    ? answers.reduce((s, a) => s + (a.nlpScore || 0), 0) / answers.length
-    : 0;
-  const avgVoice = answers.length
-    ? answers.reduce((s, a) => s + (a.voiceMetrics?.clarity || 0), 0) / answers.length
-    : 0;
-  const avgEmotion = answers.length
-    ? answers.reduce((s, a) => s + (a.emotionSummary?.avgConfidence || 0), 0) / answers.length
-    : 0;
-
+  const avgNlp = answers.length ? answers.reduce((s, a) => s + (a.nlpScore || 0), 0) / answers.length : 0;
+  const avgVoice = answers.length ? answers.reduce((s, a) => s + (a.voiceMetrics?.clarity || 0), 0) / answers.length : 0;
+  const avgEmotion = answers.length ? answers.reduce((s, a) => s + (a.emotionSummary?.avgConfidence || 0), 0) / answers.length : 0;
   return {
     sessionId: session._id,
     overallConfidence: session.overallConfidenceScore,

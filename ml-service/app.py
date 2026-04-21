@@ -261,6 +261,69 @@ def confidence_score():
         return jsonify({'confidence_score': 65, 'level': 'Medium'})
 
 
+# ================= NLP ANSWER ANALYSIS =================
+@app.route('/analyze_answer', methods=['POST'])
+def analyze_answer():
+    try:
+        data = request.get_json()
+        question = data.get('question', '')
+        answer = data.get('answer', '')
+
+        if not answer:
+            return jsonify({
+                "nlp_score": 50,
+                "keyword_score": 40,
+                "feedback": "Answer is empty or too short."
+            })
+
+        # 🔹 Basic NLP scoring
+        words = answer.split()
+        word_count = len(words)
+
+        # Length score (simple heuristic)
+        length_score = min(100, word_count * 2)
+
+        # Keyword matching
+        question_keywords = set(re.findall(r'\w+', question.lower()))
+        answer_words = set(re.findall(r'\w+', answer.lower()))
+
+        common = question_keywords.intersection(answer_words)
+        keyword_score = min(100, len(common) * 10)
+
+        # Grammar / structure proxy
+        sentence_count = max(1, answer.count('.'))
+        structure_score = min(100, sentence_count * 20)
+
+        # Final NLP score
+        nlp_score = round(
+            0.4 * length_score +
+            0.4 * structure_score +
+            0.2 * keyword_score
+        )
+
+        # Feedback generation
+        if nlp_score > 75:
+            feedback = "Good structured answer with relevant points."
+        elif nlp_score > 50:
+            feedback = "Decent answer but can be improved with more clarity and depth."
+        else:
+            feedback = "Answer lacks structure and detail. Try explaining more clearly."
+
+        return jsonify({
+            "nlp_score": nlp_score,
+            "keyword_score": keyword_score,
+            "feedback": feedback
+        })
+
+    except Exception as e:
+        app.logger.error(f"NLP error: {e}")
+        return jsonify({
+            "nlp_score": 60,
+            "keyword_score": 50,
+            "feedback": "Basic evaluation applied due to error."
+        })
+        
+
 @app.route("/", methods=["GET"])
 def root():
     return jsonify({"msg": "ML Service is up", "service": "ml-service"})
