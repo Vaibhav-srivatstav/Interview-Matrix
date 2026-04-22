@@ -4,6 +4,10 @@ A full-stack platform for technical interview practice with **real-time facial e
 
 ---
 
+# Screenshot 
+
+![alt text](image.png)  ![alt text](image-1.png)
+
 ## 🏗️ Tech Stack
 
 | Layer | Technology |
