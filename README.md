@@ -23,38 +23,84 @@ interview-platform/
 ├── frontend/          # Next.js app (port 3000)
 │   └── src/
 │       ├── app/
-│       │   ├── page.jsx           # Landing page
-│       │   ├── login/page.jsx
-│       │   ├── register/page.jsx
-│       │   ├── dashboard/page.jsx
-│       │   ├── upload/page.jsx    # Resume upload + tech detection
-│       │   ├── interview/[sessionId]/page.jsx  # Live interview
-│       │   └── results/[sessionId]/page.jsx    # Score report
-│       ├── components/
-│       │   ├── EmotionDetector.jsx  # Webcam + DeepFace emotion
-│       │   ├── VoiceRecorder.jsx    # Audio capture + STT
-│       │   └── ConfidenceScore.jsx  # Live confidence arc widget
-│       └── lib/
-│           ├── api.js             # Axios API calls
-│           └── authContext.jsx    # Auth state
+│       │   ├───globals.css
+│       │   ├───layout.jsx
+│       │   ├───not-found.jsx
+│       │   ├───page.jsx  
+│       │   ├───(admin)
+│       │   │   └───admin
+│       │   │       ├───layout.jsx  
+│       │   │       ├───page.jsx  
+│       │   │       ├───profiles/page.jsx       
+│       │   │       ├───questions/page.jsx      
+│       │   │       └───reports/page.jsx                             
+│       │   ├───(protected)/layout.jsx  
+│       │   │   ├───dashboard/page.jsx       
+│       │   │   ├───interview/page.jsx   
+│       │   │   │   └───[sessionId]/page.jsx           
+│       │   │   ├───profile/page.jsx     
+│       │   │   ├───results/page.jsx
+│       │   │   │   └───[sessionId]          
+│       │   │   └───upload/page.jsx         
+│       │   ├───login/page.jsx      
+│       │   └───register/page.jsx         
+│       ├───components
+│       │   ├───AIInterviewerPanel.jsx
+│       │   ├───ConfidenceScore.jsx
+│       │   ├───customToast.js
+│       │   ├───EmotionDetector.jsx
+│       │   ├───footer.jsx
+│       │   ├───FullPageLoader.jsx
+│       │   ├───LayoutWraper.jsx
+│       │   ├───Navbar.jsx
+│       │   ├───OAuthButton.jsx
+│       │   ├───ProtectedRoute.jsx
+│       │   ├───PublicRoute.jsx
+│       │   ├───VoiceRecorder.jsx
+│       │   ├───auth
+│       │   │     ├───login_form.js
+│       │   │     ├───protected-route.js
+│       │   │     └───register-form.js    
+│       │   ├───profile
+│       │   │     └───profile-view.js    
+│       │   └───ui....
+│       └───lib
+│            ├───api.js
+│            ├─── authContext.js
+│            └───utils.js                   
 │
 ├── backend/           # Express.js API (port 5000)
+│   ├── controllers/
+│   │   ├── admin.controller.js
+│   │   ├── auth.controller.js
+│   │   ├── evaluation.controller.js
+│   │   ├── interview.controller.js
+│   │   ├── profile.controller.js
+│   │   ├── .controller.js
+│   │   └── resume.controller.js        
+│   ├── middleware/
+│   │   └──auth.js        
 │   ├── models/        # Mongoose models
 │   │   ├── User.js
 │   │   ├── Resume.js
 │   │   ├── Question.js
 │   │   └── Session.js
 │   ├── routes/
-│   │   ├── auth.js
-│   │   ├── resume.js
-│   │   ├── interview.js
-│   │   ├── questions.js
-│   │   └── evaluation.js
+│   │   ├── admin.routes.js
+│   │   ├── auth.routes.js
+│   │   ├── evaluation.routes.js
+│   │   ├── interview.routes.js
+│   │   ├── profile.routes.js
+│   │   ├── questions.routes.js
+│   │   └── resume.routes.js
 │   ├── utils/
-│   │   ├── resumeParser.js  # Tech stack detection
-│   │   └── aiHelper.js      # OpenAI question gen + feedback
+│   │   ├── resumeParser.js
+│   │   ├──makeAdmin.js
+│   │   ├──passport.js
+│   │   ├──password.js  
+│   │   └── aiHelper.js      # GEMINI  feedback
 │   ├── seed/
-│   │   └── questions.js     # 40+ starter questions
+│   │   └── questions.js     # 50+ starter questions
 │   └── server.js
 │
 └── ml-service/        # Flask ML API (port 8000)
@@ -69,7 +115,6 @@ interview-platform/
 - Node.js 18+
 - Python 3.10+
 - MongoDB (local or Atlas)
-- OpenAI API key (optional — uses fallback without it)
 
 ### 1. Clone & Install Backend
 ```bash
@@ -83,7 +128,7 @@ npm run dev
 ### 2. Install & Run ML Service
 ```bash
 cd ml-service
-python -m venv venv
+python -m venv .venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 python -m spacy download en_core_web_sm
@@ -113,7 +158,7 @@ Open **http://localhost:3000** 🎉
 ```bash
 # Copy and fill env vars first
 cp backend/.env.example backend/.env
-# Add OPENAI_API_KEY to backend/.env
+# Add  to backend/.env
 
 docker-compose up --build
 ```
@@ -128,6 +173,7 @@ docker-compose up --build
 | POST | `/api/auth/register` | Register user |
 | POST | `/api/auth/login` | Login → JWT |
 | GET | `/api/auth/me` | Get current user |
+|| POST | `/api/auth/google` | Login → Oauth |
 
 ### Resume
 | Method | Endpoint | Description |
