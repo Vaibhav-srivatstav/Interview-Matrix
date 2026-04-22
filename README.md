@@ -255,7 +255,7 @@ The resume parser scans text for keywords and assigns categories:
 - `multer` — File upload
 - `pdf-parse` + `mammoth` — Resume text extraction
 - `socket.io` — Real-time emotion streaming
-- `openai` — Question generation + feedback
+- `gemini` —  feedback
 
 ### ML Service
 - `deepface` — Facial emotion detection
