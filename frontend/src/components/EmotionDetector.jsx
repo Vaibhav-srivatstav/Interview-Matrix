@@ -7,8 +7,11 @@ export default function EmotionDetector({ sessionId, onEmotionUpdate }) {
   const webcamRef = useRef(null);
   const [emotion, setEmotion] = useState({ dominant_emotion: 'neutral', confidence_contribution: 65, emotions: {} });
   const [camError, setCamError] = useState(false);
+  const failCountRef = useRef(0);
+  const pausedUntilRef = useRef(0);
 
   const capture = useCallback(async () => {
+    if (Date.now() < pausedUntilRef.current) return;
     if (!webcamRef.current) return;
     try {
       const screenshot = webcamRef.current.getScreenshot();
@@ -19,11 +22,18 @@ export default function EmotionDetector({ sessionId, onEmotionUpdate }) {
 
       setEmotion(res.data);
       onEmotionUpdate?.(res.data);
-    } catch {}
+    } catch (err) {
+      failCountRef.current++;
+      if (failCountRef.current >= 3) {
+        console.warn('[Emotion] Rate limited — pausing 60s');
+        pausedUntilRef.current = Date.now() + 60000; // pause 60 seconds
+        failCountRef.current = 0;
+      }
+    }
   }, [sessionId]);
 
   useEffect(() => {
-    const interval = setInterval(capture, 2000);
+    const interval = setInterval(capture, 6000);
     return () => clearInterval(interval);
   }, [capture]);
 

@@ -31,35 +31,35 @@ export default function InterviewPage() {
   const timerRef = useRef(null);
 
   /* ---------------- Load Questions ---------------- */
-useEffect(() => {
-  // 1. First, try to get questions for THIS specific session
-  const stored = sessionStorage.getItem(`questions_${sessionId}`);
+  useEffect(() => {
+    // 1. First, try to get questions for THIS specific session
+    const stored = sessionStorage.getItem(`questions_${sessionId}`);
 
-  if (stored) {
-    setQuestions(JSON.parse(stored));
-  } else {
-    // 2. If not in storage, fetch NEW random questions from API
-    getSession(sessionId)
-      .then(async () => {
-        // Fetch from your random-enabled endpoint
-        // Note: Make sure your getQuestions API call is actually hitting the backend
-        const response = await fetch(`/api/questions?limit=20`); 
-        const data = await response.json();
-        
-        if (data.questions && data.questions.length > 0) {
-          setQuestions(data.questions);
-          // Save them so they stay the same IF the user refreshes THIS session
-          sessionStorage.setItem(`questions_${sessionId}`, JSON.stringify(data.questions));
-        } else {
-          toast.error('No questions found in database');
-        }
-      })
-      .catch(() => {
-        toast.error('Session not found');
-        router.push('/dashboard');
-      });
-  }
-}, [sessionId]);
+    if (stored) {
+      setQuestions(JSON.parse(stored));
+    } else {
+      // 2. If not in storage, fetch NEW random questions from API
+      getSession(sessionId)
+        .then(async () => {
+          // Fetch from your random-enabled endpoint
+          // Note: Make sure your getQuestions API call is actually hitting the backend
+          const response = await fetch(`/api/questions?limit=20`);
+          const data = await response.json();
+
+          if (data.questions && data.questions.length > 0) {
+            setQuestions(data.questions);
+            // Save them so they stay the same IF the user refreshes THIS session
+            sessionStorage.setItem(`questions_${sessionId}`, JSON.stringify(data.questions));
+          } else {
+            toast.error('No questions found in database');
+          }
+        })
+        .catch(() => {
+          toast.error('Session not found');
+          router.push('/dashboard');
+        });
+    }
+  }, [sessionId]);
 
   /* ---------------- Timer ---------------- */
   useEffect(() => {
@@ -79,9 +79,9 @@ useEffect(() => {
     }
   }, []);
 
-  const handleTranscript = useCallback((text) => {
+  function handleTranscript(text) {
     setAnswerText(text);
-  }, []);
+  }
 
   const handleVoiceMetrics = useCallback((metrics) => {
     setVoiceMetrics(metrics);
@@ -195,7 +195,7 @@ useEffect(() => {
 
         {/* RIGHT PANEL */}
         <div className="lg:col-span-2 space-y-4">
-          <AIInterviewer key={`interviewer-${currentIdx}`}  question={currentQ.text} />
+          <AIInterviewer key={`interviewer-${currentIdx}`} question={currentQ.text} />
           {/* Question */}
           <div className="card">
             <h2 className="text-lg font-semibold text-[var(--foreground)]">
