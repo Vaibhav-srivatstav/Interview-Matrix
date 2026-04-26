@@ -22,4 +22,4 @@ RUN pip install --upgrade pip \
 
 COPY app.py .
 EXPOSE 8000
-CMD ["gunicorn", "-w", "1", "-b", "0.0.0.0:8000", "--timeout", "120", "--preload", "app:app"]
+CMD ["sh", "-c", "gunicorn -w 1 -b 0.0.0.0:$PORT --timeout 120 --max-requests 100 --max-requests-jitter 10 app:app"]
