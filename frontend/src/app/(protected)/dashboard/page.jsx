@@ -182,7 +182,7 @@ export default function DashboardPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
 
                   <XAxis dataKey="name" tick={{ fill: '#9ca3af', fontSize: 12 }} />
-                  <YAxis domain={[0, 100]} tick={{ fill: '#9ca3af' }} />
+                  <YAxis domain={[0, 100]} interval={0} tick={{ fill: '#9ca3af' }} />
 
                   <Tooltip />
 
