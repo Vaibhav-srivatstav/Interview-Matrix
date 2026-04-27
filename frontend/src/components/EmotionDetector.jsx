@@ -11,7 +11,7 @@ export default function EmotionDetector({ sessionId, onEmotionUpdate }) {
   const pausedUntilRef = useRef(0);
 
   const capture = useCallback(async () => {
-    if (Date.now() < pausedUntilRef.current<120000) return;
+    if (Date.now() < pausedUntilRef.current) return;
     if (!webcamRef.current) return;
     try {
       const screenshot = webcamRef.current.getScreenshot();
